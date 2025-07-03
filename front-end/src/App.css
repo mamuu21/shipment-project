@@ -1,0 +1,121 @@
+.sidebar-btn {
+  background-color: #2e3444;
+  color: white;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 6px 16px;
+  text-align: center;
+  display: block;
+  transition: background-color 0.2s ease;
+  text-decoration: none;
+}
+.sidebar-btn:hover {
+  background-color: #3f475a;
+}
+.sidebar-btn.active {
+  background-color: #586179;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #bccad4;
+}
+.navbar {
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.container-fluid {
+  padding-top: 0;
+}
+.content-area {
+  background-color: #eff4fc; 
+  min-height: 100vh;
+  /* padding: 20px; */
+  /* border-radius: 10px; */
+}
+.card:hover {
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  transition: 0.2s ease-in-out;
+}
+
+.badge {
+  font-size: 0.75rem;
+}
+/* ShipmentList.css */
+
+/* ShipmentList.css */
+
+.container-fluid {
+  font-family: 'Inter', sans-serif;
+}
+
+.custom-table th {
+  font-weight: 400 !important;
+  font-size: 0.75rem;
+  color: #6c757d;
+  white-space: nowrap;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.custom-table td {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.3rem;
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  background: #eaeaea !important;
+}
+
+.small-tabs .nav-link {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem;
+}
+.table-header-bg th {
+  position: sticky;
+  top: 0;
+  background-color: #798ba7; /* Match project background */
+  color: #6c757d;
+  font-weight: 600; /* Makes the text bold */
+  z-index: 1;
+  border-bottom: 1px solid #dee2e6;
+}
+.table-header-bg th {
+  font-weight: 600 !important;
+}
+.table-header-bg {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.custom-table td {
+  vertical-align: middle;
+}
+
+.plain-badge {
+  background: #eee;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.action-btn {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+.table-header-bg th {
+  font-size: 14px;
+  font-weight: bold;
+}
+.custom-table tbody tr:hover {
+  background-color: #f1f3f5;
+  cursor: pointer;
+}
+
+
+
+
+
+
