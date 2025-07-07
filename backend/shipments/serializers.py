@@ -72,7 +72,7 @@ class ShipmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipment
         fields = ['shipment_no', 'transport', 'vessel', 'origin', 'destination',
-            'weight', 'volume', 'steps', 'status',
+            'weight', 'weight_unit', 'volume', 'volume_unit', 'steps', 'status',
             'customer_count', 'parcel_count']
         
     def get_customer_count(self, obj):

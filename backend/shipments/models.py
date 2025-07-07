@@ -208,6 +208,13 @@ class Invoice(models.Model):
         on_delete=models.CASCADE,
         related_name='invoices'
     )
+    parcel = models.ForeignKey(
+        'Parcel',
+        on_delete=models.CASCADE,
+        related_name='invoices',
+        null=True,
+        blank=True
+    )
     issue_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     total_amount = MoneyField(max_digits=14, decimal_places=2, default_currency='TZS')
