@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../utils/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Login() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/api/token/', formData);
+      const response = await api.post('/login/', formData);
       const token = response.data.access;
 
       localStorage.setItem('access_token', response.data.access);
@@ -61,6 +61,9 @@ function Login() {
         <div className="d-grid">
           <button type="submit" className="btn btn-primary">Login</button>
         </div>
+        <p className="text-center mt-3">
+          Don't have an account? <Link to="/register">Register</Link>
+        </p>
       </form>
     </div>
   );

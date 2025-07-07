@@ -4,7 +4,7 @@ import ParcelCreate from './create';
 import { Table, InputGroup, Form, Button, Modal, Pagination, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import { FaPlus, FaPen, FaTrash, FaEye, FaSearch, FaFileExport, FaEllipsisH } from 'react-icons/fa';
 
-const ParcelPage = () => {
+const ParcelPage = ({ customerId, shipmentId }) => {
   const [parcels, setParcels] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -14,20 +14,40 @@ const ParcelPage = () => {
   const itemsPerPage = 10;
 
   useEffect(() => {
+    console.log("🚚 Customer ID passed to ParcelList:", customerId);
+    
     const fetchParcels = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await api.get('/parcels/', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const token = localStorage.getItem('access_token');
+        const headers = { Authorization: `Bearer ${token}` };
+
+        let url = '/parcels/';
+        const queryParams = [];
+
+        if (customerId) {
+          queryParams.push(`customer=${customerId}`);
+        }
+
+        if (shipmentId) {
+          queryParams.push(`shipment=${shipmentId}`);
+        }
+
+        if (queryParams.length > 0) {
+          url += `?${queryParams.join('&')}`;
+        }
+
+        const response = await api.get(url, { headers });
         const data = response.data;
+
         setParcels(Array.isArray(data) ? data : data.results || []);
       } catch (error) {
         console.error('Failed to fetch parcels:', error);
       }
     };
+
     fetchParcels();
-  }, []);
+  }, [customerId, shipmentId]); 
+
 
   const handleExportCSV = () => {
     const headers = ['Parcel No', 'Shipment', 'Weight', 'Volume', 'Customer', 'Charge', 'Commodity Type'];

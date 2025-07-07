@@ -25,29 +25,45 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchCounts = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
 
-        const [shipmentsRes, customersRes, parcelsRes, invoicesRes] = await Promise.all([
-          api.get('/shipments/', { headers }),
-          api.get('/customers/', { headers }),
-          api.get('/parcels/', { headers }),
-          api.get('/invoices/', { headers })
-        ]);
-        setCounts({
-          shipments: shipmentsRes.data.count || shipmentsRes.data.length || 0,
-          customers: customersRes.data.count || customersRes.data.length || 0,
-          parcels: parcelsRes.data.count || parcelsRes.data.length || 0,
-          invoices: invoicesRes.data.count || invoicesRes.data.length || 0
-        });
-      } catch (error) {
-        console.error('Failed to fetch dashboard counts:', error);
+      try {
+        const shipmentsRes = await api.get('/shipments/', { headers });
+        console.log("Shipments Count:", shipmentsRes.data.count);
+        setCounts(prev => ({ ...prev, shipments: shipmentsRes.data.count ?? shipmentsRes.data.length ?? 0 }));
+      } catch (err) {
+        console.error("Error fetching shipments:", err);
+      }
+
+      try {
+        const customersRes = await api.get('/customers/', { headers });
+        console.log("Customers Count:", customersRes.data.count);
+        setCounts(prev => ({ ...prev, customers: customersRes.data.count ?? customersRes.data.length ?? 0 }));
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+      }
+
+      try {
+        const parcelsRes = await api.get('/parcels/', { headers });
+        console.log("Parcels Count:", parcelsRes.data.count);
+        setCounts(prev => ({ ...prev, parcels: parcelsRes.data.count ?? parcelsRes.data.length ?? 0 }));
+      } catch (err) {
+        console.error("Error fetching parcels:", err);
+      }
+
+      try {
+        const invoicesRes = await api.get('/invoices/', { headers });
+        console.log("Invoices Count:", invoicesRes.data.count);
+        setCounts(prev => ({ ...prev, invoices: invoicesRes.data.count ?? invoicesRes.data.length ?? 0 }));
+      } catch (err) {
+        console.error("Error fetching invoices:", err);
       }
     };
 
     fetchCounts();
   }, []);
+
 
   return (
     <div className="container-fluid">

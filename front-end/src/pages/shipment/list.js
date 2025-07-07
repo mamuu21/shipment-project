@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from "react-router-dom";
-import  { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from "react-router-dom";
 
 import api from '../../utils/api';
 import ShipmentCreate from './create';
@@ -34,6 +33,7 @@ const DeleteModal = ({ show, onClose, onConfirm, shipment }) => {
 };
 
 const ShipmentList = () => {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -157,24 +157,6 @@ const ShipmentList = () => {
     setSelectedShipment(null);
   };
 
-  const navigate = useNavigate();
-
-  const handleViewDetails = (item) => {
-    const mappedShipment = {
-      shipmentNumber: item.id,
-      user: 'Admin',
-      address: `${item.origin} → ${item.destination}`,
-      shippingmode: item.transport,
-      vessel: item.vessel,
-      documents: item.documents,
-      containerWeight: `${item.weight} ${item.weightunit}`,
-      containerSize: '35/40 feet',
-      percentageFill: '87%'
-    };
-
-
-    navigate('/shipment/detail', {state: {shipment: mappedShipment}});
-  };
 
 
   return (
@@ -249,8 +231,8 @@ const ShipmentList = () => {
                     <td>{item.vessel}</td>
                     <td>{item.customer_count}</td>
                     <td>{item.parcel_count}</td>
-                    <td>{item.weight} {item.weightunit}</td>
-                    <td>{item.volume} {item.volumeunit}</td>
+                    <td>{item.weight} {item.weight_unit}</td>
+                    <td>{item.volume} {item.volume_unit}</td>
                     <td>{item.origin}</td>
                     <td>{item.destination}</td>
                     <td>{item.steps}</td>
@@ -267,8 +249,8 @@ const ShipmentList = () => {
                             </Dropdown.Toggle>
 
                             <Dropdown.Menu className='small'>
-                                <Dropdown.Item 
-                                  onClick={() => handleViewDetails(item)}
+                                <Dropdown.Item
+                                  onClick={() => navigate(`/shipment/${item.shipment_no}`)}
                                   style={{ fontSize: '0.8rem', cursor: 'pointer' }}>
                                     <FaEye className="me-2" /> View Details
                                 </Dropdown.Item>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../utils/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function Register() {
   const navigate = useNavigate();
@@ -111,9 +111,10 @@ function Register() {
         <div className="d-grid">
             <button type="submit" className="btn btn-primary">Register</button>
         </div>
+        <p className="text-center mt-3">
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
       </form>
-
-
     </div>
   );
 }

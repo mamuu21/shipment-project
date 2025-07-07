@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, InputGroup } from 'react-bootstrap';
 
-const CustomerCreate = ({ show, onClose, onAddCustomer }) => {
+const CustomerCreate = ({ show, onClose, onAddCustomer, shipmentId }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    address: ''
+    address: '',
+    shipment: shipmentId || ''
   });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+    if (shipmentId) {
+      setFormData(prev => ({ ...prev, shipment: shipmentId }));
+    }
+  }, [shipmentId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -71,6 +78,17 @@ const CustomerCreate = ({ show, onClose, onAddCustomer }) => {
               onChange={handleChange}
               placeholder="Enter address"
               required
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Shipment</Form.Label>
+            <Form.Control
+              name="shipment"
+              value={formData.shipment}
+              onChange={handleChange}
+              placeholder="Enter shipment number"
+              disabled={!!shipmentId}
             />
           </Form.Group>
 

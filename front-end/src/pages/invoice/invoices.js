@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../utils/api';
+import api from '../../utils/api';
 import { Table, InputGroup, Form, Button, Modal, Pagination, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import { FaPlus, FaPen, FaTrash, FaEye, FaSearch, FaFileExport, FaEllipsisH } from 'react-icons/fa';
 
@@ -30,7 +30,7 @@ const InvoiceModal = ({ show, onClose, onAdd }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await api.post('/invoices/', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -104,7 +104,7 @@ const Invoice = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       await api.delete(`/invoices/${selectedInvoice.id}/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -123,7 +123,7 @@ const Invoice = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token');
         const response = await api.get('/invoices/', {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -220,7 +220,7 @@ const Invoice = () => {
                 <tr key={inv.id || inv.invoice_no}>
                   <td>{inv.invoice_no}</td>
                   <td>{inv.customer}</td>
-                  <td>{inv.shipment}</td>
+                  <td>{inv.shipment?.shipment_no || 'N/A'}</td>
                   <td>{inv.issue_date}</td>
                   <td>{inv.due_date}</td>
                   <td>{inv.total_amount}</td>

@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from "./components/Sidebar";
 import Header from './components/Header';
 import Dashboard from './pages/dashboard/Dashboardpage';
-import Invoice from './pages/invoice';
+import Invoice from './pages/invoice/invoices';
 import TrackShipment from './pages/track';
 import WarehousePage from './pages/warehouse';
 import ShippingQuoteCalculator from './pages/quote';
@@ -13,6 +13,7 @@ import ShipmentList from './pages/shipment/list';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Customer from './pages/customer/customers';
+import CustomerDetails from './pages/customer/detail';
 import Parcel from './pages/parcel/parcels';
 
 // layout for auth pages
@@ -51,6 +52,7 @@ function App() {
         <Route path="/shipment/:id" element={<MainLayout><ShipmentDetail /></MainLayout>} />
         <Route path="/list" element={<MainLayout><ShipmentList /></MainLayout>} />
         <Route path="/customer" element={<MainLayout><Customer /></MainLayout>} />
+        <Route path="/customer/:id" element={<MainLayout><CustomerDetails /></MainLayout>} />
         <Route path="/parcel" element={<MainLayout><Parcel /></MainLayout>} />
 
 

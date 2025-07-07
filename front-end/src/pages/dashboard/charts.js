@@ -1,35 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-
-const revenueData = [
-  { name: 'Jan', air: 400, sea: 240 },
-  { name: 'Feb', air: 300, sea: 221 },
-  { name: 'Mar', air: 200, sea: 229 },
-  { name: 'Apr', air: 278, sea: 200 },
-  { name: 'May', air: 400, sea: 218 },
-  { name: 'June', air: 350, sea: 250 },
-];
-
-const airVehicleData = [
-  { name: 'Tanzan - Air Cargo', value: 1300, color: '#7F56D9' },
-  { name: 'KLM Cargo', value: 920, color: '#F79009' },
-  { name: 'Turkish Airlines', value: 315, color: '#10B981' },
-  { name: 'China Air', value: 610, color: '#D0D5DD' },
-];
-
-const marineVehicleData = [
-  { name: 'Azam Marine I', value: 1300, color: '#7F56D9' },
-  { name: 'Azam Marine II', value: 920, color: '#F79009' },
-  { name: 'Azam Marine III', value: 315, color: '#10B981' },
-  { name: 'Azam Marine IV', value: 610, color: '#D0D5DD' },
-];
+import api from '../../utils/api';
 
 const DashboardCharts = () => {
   const [activeTab, setActiveTab] = useState("air");
-  const chartData = activeTab === "air" ? airVehicleData : marineVehicleData;
+  const [chartData, setChartData] = useState({
+    revenueData: [],
+    airVehicleData: [],
+    marineVehicleData: []
+  });
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const res = await api.get('/chart-data/', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setChartData(res.data);
+      } catch (error) {
+        console.error('Failed to fetch chart data:', error);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
+  const vehicleData = activeTab === "air" ? chartData.airVehicleData : chartData.marineVehicleData;
 
   return (
     <div className="row mb-4">
@@ -40,7 +40,7 @@ const DashboardCharts = () => {
             <h5 className="card-title">Revenue Trend</h5>
             <div style={{ height: '250px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={revenueData}>
+                <BarChart data={chartData.revenueData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -86,15 +86,15 @@ const DashboardCharts = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={chartData}
+                    data={vehicleData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
                     outerRadius={80}
                     dataKey="value"
                   >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    {vehicleData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
                     ))}
                   </Pie>
                   <Legend />

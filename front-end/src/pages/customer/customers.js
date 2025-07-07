@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { Table, InputGroup, Form, Button, Modal, Pagination, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import { FaPlus, FaPen, FaTrash, FaEye, FaSearch, FaFileExport, FaEllipsisH } from 'react-icons/fa';
@@ -36,7 +37,7 @@ const Create = ({show, onClose, onAddCustomer}) => {
     const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await api.post('/customers/', formData, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -126,7 +127,7 @@ const Create = ({show, onClose, onAddCustomer}) => {
 };
 
 
-const Customer = () => {
+const Customer = ({ shipmentId }) => {
     const [filter, setFilter] = useState('All');
     const [customers, setCustomers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -139,8 +140,12 @@ const Customer = () => {
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await api.get('/customers/', {
+                const token = localStorage.getItem('access_token');
+                let url = '/customers/';
+                if (shipmentId) {
+                    url = `/shipments/${shipmentId}/customers/`;
+                }
+                const response = await api.get(url, {
                     headers: {Authorization: `Bearer ${token}`}
                 });
                 const data = response.data;
@@ -152,7 +157,7 @@ const Customer = () => {
             }
         };
         fetchCustomers();
-    }, []);
+    }, [shipmentId]);
 
     const handleAddCustomer = (newCustomer) => {
         setCustomers(prev => [...prev, newCustomer]);
@@ -215,6 +220,12 @@ const Customer = () => {
         setSelectedCustomer(null);
     };
 
+    const navigate = useNavigate();
+
+    const handleViewDetails = (customerId) => {
+        navigate(`/customer/${customerId}`);
+    };
+
     return (
         <div className="container-fluid p-3" style={{ backgroundColor: "#f4f7fb", minHeight: "100vh" }}>
             <div className="bg-white p-3 rounded shadow-sm">
@@ -241,6 +252,12 @@ const Customer = () => {
                             onClick={() => setShowCreateModal(true)}
                         >
                             <FaPlus /> New Customer
+                        </Button>
+                        <Button
+                            variant="info"
+                            onClick={() => setShowCreateModal(true)}
+                        >
+                            <FaPlus /> New Customer to Shipment
                         </Button>
                     </div>
                 </div>
@@ -286,7 +303,7 @@ const Customer = () => {
                                     <td>{c.address}</td>
                                     <td>{getStatusBadge(c.status)}</td>
                                     <td>{c.total_parcels}</td>
-                                    <td>{c.total_parcel_weight}</td>
+                                    <td>{c.total_parcel_weight} kg</td>
                                     {/* <td>{c.total_shipments}</td> */}
                                     <td>{c.total_invoices_paid}</td>
                                     <td>
@@ -306,7 +323,7 @@ const Customer = () => {
 
                                             <Dropdown.Menu className='small'>
                                                 <Dropdown.Item 
-                                                    // onClick={() => handleViewDetails(i)}
+                                                    onClick={() => handleViewDetails(c.id)}
                                                     style={{ fontSize: '0.8rem', cursor: 'pointer' }}>
                                                     <FaEye className="me-2" /> View Details
                                                 </Dropdown.Item>
@@ -347,7 +364,8 @@ const Customer = () => {
                 <Create 
                     show={showCreateModal} 
                     onClose={() => setShowCreateModal(false)} 
-                    onAddCustomer={handleAddCustomer} 
+                    onAddCustomer={handleAddCustomer}
+                    shipmentId={shipmentId}
                 />
                 <DeleteModal 
                     show={showDeleteModal} 
