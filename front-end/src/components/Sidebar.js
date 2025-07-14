@@ -21,12 +21,7 @@ const Sidebar = () => {
           <NavLink to="/dashboard" className={({ isActive }) => `sidebar-btn ${isActive ? 'active' : ''}`}>
             Dashboard
           </NavLink>
-        </li>
-        <li className="nav-item mb-3 text-center">
-          <NavLink to="/list" className={({ isActive }) => `sidebar-btn ${isActive ? 'active' : ''}`}>
-            All Shipments
-          </NavLink>
-        </li>
+        </li>       
         <li className="nav-item mb-3 text-center">
           <NavLink to="/track" className={({ isActive }) => `sidebar-btn ${isActive ? 'active' : ''}`}>
             Track Shipment
@@ -40,11 +35,6 @@ const Sidebar = () => {
         <li className="nav-item mb-3 text-center">
           <NavLink to="/warehouse" className={({ isActive }) => `sidebar-btn ${isActive ? 'active' : ''}`}>
             Warehouse
-          </NavLink>
-        </li>
-        <li className="nav-item mb-3 text-center">
-          <NavLink to="/invoice" className={({ isActive }) => `sidebar-btn ${isActive ? 'active' : ''}`}>
-            Invoices
           </NavLink>
         </li>
       </ul>
