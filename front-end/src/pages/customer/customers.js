@@ -134,8 +134,11 @@ const Customer = ({ shipmentId }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [count, setCount] = useState(0);
+    const [nextPage, setNextPage] = useState(null);
+    const [prevPage, setPrevPage] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [currentUrl, setCurrentUrl] = useState("/customers/");
 
     useEffect(() => {
         const fetchCustomers = async () => {
@@ -152,12 +155,20 @@ const Customer = ({ shipmentId }) => {
                 console.log("Fetched customers:", data);
 
                 setCustomers(Array.isArray(data) ? data : data.results || []);
+                setCount(data.count);
+                setNextPage(data.next);
+                setPrevPage(data.previous);
+
+                const parsedUrl = new URL(currentUrl, window.location.origin);
+                const page = parseInt(parsedUrl.searchParams.get("page") || "1");
+                setCurrentPage(page);
+
             } catch(error) {
                 console.error('Failed to fetch customers:', error)
             }
         };
         fetchCustomers();
-    }, [shipmentId]);
+    }, [shipmentId, currentUrl]);
 
     const handleAddCustomer = (newCustomer) => {
         setCustomers(prev => [...prev, newCustomer]);
@@ -171,9 +182,9 @@ const Customer = ({ shipmentId }) => {
         }
     };
 
-    const filteredData = customers.filter(cust =>
+    const filteredData = customers.filter(c =>
         ['name', 'email', 'phone', 'address', 'status'].some(field => 
-            (cust[field] || '').toLowerCase().includes(searchQuery.toLowerCase())
+            (c[field] || '').toLowerCase().includes(searchQuery.toLowerCase())
         )
     );
 
@@ -182,12 +193,6 @@ const Customer = ({ shipmentId }) => {
         return c.status === filter;
     });
 
-    const paginatedData = filteredCustomers.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
     const handleExportCSV = () => {
         const headers = ['Name', 'Email', 'Phone', 'Address', 'Status'];
@@ -294,7 +299,7 @@ const Customer = ({ shipmentId }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedData.length > 0 ? paginatedData.map((c, i) => (
+                            {filteredData.length > 0 ? filteredData.map((c, i) => (
                                 <tr key={c.id}>
                                     <td>{c.id}</td>
                                     <td>{c.name}</td>
@@ -351,15 +356,38 @@ const Customer = ({ shipmentId }) => {
                     </Table>
                 </div>
 
-                {totalPages > 1 && (
-                    <Pagination className="justify-content-center mt-3">
-                        {[...Array(totalPages)].map((_, i) => (
-                            <Pagination.Item key={i} active={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
-                                {i + 1}
-                            </Pagination.Item>
+                <div className="d-flex justify-content-between align-items-center mt-3" style={{ fontSize: "0.85rem" }}>
+                    <div>
+                        Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, count)} of {count} entries
+                    </div>
+
+                    <Pagination>
+                        <Pagination.Prev
+                        onClick={() => prevPage && setCurrentUrl(prevPage)}
+                        disabled={!prevPage}
+                        >
+                        Previous
+                        </Pagination.Prev>
+
+                        {[...Array(Math.ceil(count / 10))].map((_, i) => (
+                        <Pagination.Item
+                            key={i}
+                            active={currentPage === i + 1}
+                            onClick={() => setCurrentUrl(`/customers/?page=${i + 1}`)}
+                        >
+                            {i + 1}
+                        </Pagination.Item>
                         ))}
+
+                        <Pagination.Next
+                        onClick={() => nextPage && setCurrentUrl(nextPage)}
+                        disabled={!nextPage}
+                        >
+                        Next
+                        </Pagination.Next>
                     </Pagination>
-                )}
+                </div>
+
 
                 <Create 
                     show={showCreateModal} 

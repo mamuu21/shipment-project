@@ -10,18 +10,20 @@ const ParcelPage = ({ customerId, shipmentId }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [count, setCount] = useState(0);
+  const [nextPage, setNextPage] = useState(null);
+  const [prevPage, setPrevPage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [currentUrl, setCurrentUrl] = useState("/parcels/");
 
-  useEffect(() => {
-    console.log("🚚 Customer ID passed to ParcelList:", customerId);
-    
+
+  useEffect(() => { 
     const fetchParcels = async () => {
       try {
         const token = localStorage.getItem('access_token');
         const headers = { Authorization: `Bearer ${token}` };
 
-        let url = '/parcels/';
+        let fetchUrl = '/parcels/';
         const queryParams = [];
 
         if (customerId) {
@@ -33,20 +35,28 @@ const ParcelPage = ({ customerId, shipmentId }) => {
         }
 
         if (queryParams.length > 0) {
-          url += `?${queryParams.join('&')}`;
+          fetchUrl += `?${queryParams.join('&')}`;
         }
 
-        const response = await api.get(url, { headers });
+        const response = await api.get(fetchUrl, { headers });
         const data = response.data;
 
         setParcels(Array.isArray(data) ? data : data.results || []);
+        setCount(data.count);
+        setNextPage(data.next);
+        setPrevPage(data.previous);
+
+        const parsedUrl = new URL(currentUrl, window.location.origin);
+        const page = parseInt(parsedUrl.searchParams.get("page") || "1");
+        setCurrentPage(page);
+        
       } catch (error) {
         console.error('Failed to fetch parcels:', error);
       }
     };
 
     fetchParcels();
-  }, [customerId, shipmentId]); 
+  }, [customerId, shipmentId, currentUrl]); 
 
 
   const handleExportCSV = () => {
@@ -76,12 +86,6 @@ const ParcelPage = ({ customerId, shipmentId }) => {
     )
   );
 
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const handleDeleteClick = (parcel) => {
     setSelectedParcel(parcel);
@@ -134,7 +138,7 @@ const ParcelPage = ({ customerId, shipmentId }) => {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.length > 0 ? paginatedData.map(p => (
+              {filteredData.length > 0 ? filteredData.map(p => (
                 <tr key={p.parcel_no}>
                   <td>{p.parcel_no}</td>
                   <td>{p.customer?.name}</td>
@@ -184,15 +188,40 @@ const ParcelPage = ({ customerId, shipmentId }) => {
           </Table>
         </div>
 
-        {totalPages > 1 && (
-          <Pagination className="justify-content-center mt-3">
-            {[...Array(totalPages)].map((_, i) => (
-              <Pagination.Item key={i} active={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
+        <div className="d-flex justify-content-between align-items-center mt-3" style={{ fontSize: "0.85rem" }}>
+          {/* Showing X to Y of Z entries */}
+          <div>
+            Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, count)} of {count} entries
+          </div>
+
+          {/* Bootstrap Pagination */}
+          <Pagination>
+            <Pagination.Prev
+              onClick={() => prevPage && setCurrentUrl(prevPage)}
+              disabled={!prevPage}
+            >
+              Previous
+            </Pagination.Prev>
+
+            {[...Array(Math.ceil(count / 10))].map((_, i) => (
+              <Pagination.Item
+                key={i}
+                active={currentPage === i + 1}
+                onClick={() => setCurrentUrl(`/parcels/?page=${i + 1}`)}
+              >
                 {i + 1}
               </Pagination.Item>
             ))}
+
+            <Pagination.Next
+              onClick={() => nextPage && setCurrentUrl(nextPage)}
+              disabled={!nextPage}
+            >
+              Next
+            </Pagination.Next>
           </Pagination>
-        )}
+        </div>
+
 
         <ParcelCreate
           show={showCreateModal} 

@@ -40,28 +40,41 @@ const ShipmentList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
   const [shipments, setShipments] = useState([])
+  const [nextPage, setNextPage] = useState(null);
+  const [prevPage, setPrevPage] = useState(null);
+  const [currentUrl, setCurrentUrl] = useState('/shipments/');
+  const [count, setCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
 
   useEffect(() => {
     const fetchshipments = async () => {
       try {
-        const response = await api.get('/shipments/');
+        const response = await api.get(currentUrl);
         const data = response.data;
+
         setShipments(Array.isArray(data) ? data : data.results || []);
-        console.log("Fetched shipments:", response.data);
+        setCount(data.count);
+        setNextPage(data.next);
+        setPrevPage(data.previous);
+
+        const url = new URL(currentUrl, window.location.origin);
+        const page = parseInt(url.searchParams.get("page") || "1");
+        setCurrentPage(page);
+
       } catch (error) {
         console.error('Failed to fetch shipments', error);
       }
     };
 
     fetchshipments();
-  }, []);
+  }, [currentUrl]);
 
   const handleAddShipment = async (newShipment) => {
     try {
       const token = localStorage.getItem('token');
 
       console.log("Submitting shipment:", newShipment);
-
 
       const response = await api.post('/shipments/', newShipment, {
         headers: {
@@ -85,22 +98,14 @@ const ShipmentList = () => {
     setShipments(updated);
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   const filteredData = shipments.filter((shipment) => {
     const matchesFilter = filter === "All" || shipment.status === filter;
-    const matchesSearch = ["id", "origin", "destination"].some(key =>
+    const matchesSearch = ["shipment_no", "origin", "destination", 'vessel'].some(key =>
       (shipment[key] ?? "").toLowerCase().includes(searchQuery.toLowerCase())
     );
     return matchesFilter && matchesSearch;
   });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const handleExportCSV = () => {
     if (filteredData.length === 0) return;
@@ -194,7 +199,7 @@ const ShipmentList = () => {
           activeKey={filter}
           onSelect={(k) => {
             setFilter(k);
-            setCurrentPage(1);
+            setCurrentUrl('/shipments/');
           }}
           className="mb-3 small-tabs"
         >
@@ -223,8 +228,8 @@ const ShipmentList = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedData.length > 0 ? (
-                paginatedData.map((item, idx) => (
+              {filteredData.length > 0 ? (
+                filteredData.map((item, idx) => (
                   <tr key={idx}>
                     <td>{item.shipment_no}</td>
                     <td>{item.transport}</td>
@@ -282,19 +287,40 @@ const ShipmentList = () => {
           </Table>
         </div>
 
-        {totalPages > 1 && (
-          <Pagination className="justify-content-center mt-3">
-            {[...Array(totalPages)].map((_, idx) => (
+        <div className="d-flex justify-content-between align-items-center mt-3" style={{ fontSize: '0.85rem' }}>
+          {/* Left text */}
+          <div>
+            Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, count)} of {count} entries
+          </div>
+
+          {/* Right pagination */}
+          <Pagination>
+            <Pagination.Prev
+              onClick={() => prevPage && setCurrentUrl(prevPage)}
+              disabled={!prevPage}
+            >
+              Previous
+            </Pagination.Prev>
+
+            {[...Array(Math.ceil(count / 10))].map((_, i) => (
               <Pagination.Item
-                key={idx}
-                active={currentPage === idx + 1}
-                onClick={() => setCurrentPage(idx + 1)}
+                key={i}
+                active={currentPage === i + 1}
+                onClick={() => setCurrentUrl(`/shipments/?page=${i + 1}`)}
               >
-                {idx + 1}
+                {i + 1}
               </Pagination.Item>
             ))}
+
+            <Pagination.Next
+              onClick={() => nextPage && setCurrentUrl(nextPage)}
+              disabled={!nextPage}
+            >
+              Next
+            </Pagination.Next>
           </Pagination>
-        )}
+        </div>
+
 
         <ShipmentCreate
           show={showCreateModal}
