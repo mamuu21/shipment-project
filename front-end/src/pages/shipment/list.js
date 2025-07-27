@@ -215,6 +215,7 @@ const ShipmentList = () => {
                 <th>Shipment No.</th>
                 <th>Transport</th>
                 <th>Vessel</th>
+                <th>Status</th>
                 <th>Customers</th>
                 <th>Parcels</th>
                 <th>Weight</th>
@@ -223,7 +224,6 @@ const ShipmentList = () => {
                 <th>Destination</th>
                 <th>Steps</th>
                 <th>Documents</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -234,6 +234,7 @@ const ShipmentList = () => {
                     <td>{item.shipment_no}</td>
                     <td>{item.transport}</td>
                     <td>{item.vessel}</td>
+                    <td>{getStatusBadge(item.status)}</td>
                     <td>{item.customer_count}</td>
                     <td>{item.parcel_count}</td>
                     <td>{item.weight} {item.weight_unit}</td>
@@ -242,7 +243,6 @@ const ShipmentList = () => {
                     <td>{item.destination}</td>
                     <td>{item.steps}</td>
                     <td>{item.documents}</td>
-                    <td>{getStatusBadge(item.status)}</td>
                     <td>
                         <Dropdown align="end">
                             <Dropdown.Toggle

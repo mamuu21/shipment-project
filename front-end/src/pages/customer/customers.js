@@ -140,35 +140,42 @@ const Customer = ({ shipmentId }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [currentUrl, setCurrentUrl] = useState("/customers/");
 
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                const token = localStorage.getItem('access_token');
-                let url = '/customers/';
-                if (shipmentId) {
-                    url = `/shipments/${shipmentId}/customers/`;
-                }
-                const response = await api.get(url, {
-                    headers: {Authorization: `Bearer ${token}`}
-                });
-                const data = response.data;
-                console.log("Fetched customers:", data);
+   useEffect(() => {
+    const fetchCustomers = async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const headers = { Authorization: `Bearer ${token}` };
 
-                setCustomers(Array.isArray(data) ? data : data.results || []);
-                setCount(data.count);
-                setNextPage(data.next);
-                setPrevPage(data.previous);
+            // Base URL depending on shipment filter
+            let fetchUrl = shipmentId
+                ? `/shipments/${shipmentId}/customers/`
+                : '/customers/';
 
-                const parsedUrl = new URL(currentUrl, window.location.origin);
-                const page = parseInt(parsedUrl.searchParams.get("page") || "1");
-                setCurrentPage(page);
-
-            } catch(error) {
-                console.error('Failed to fetch customers:', error)
+            // Add pagination
+            const parsedUrl = new URL(currentUrl, window.location.origin);
+            const page = parsedUrl.searchParams.get("page");
+            if (page) {
+                const connector = fetchUrl.includes('?') ? '&' : '?';
+                fetchUrl += `${connector}page=${page}`;
             }
-        };
-        fetchCustomers();
-    }, [shipmentId, currentUrl]);
+
+            const response = await api.get(fetchUrl, { headers });
+            const data = response.data;
+
+            setCustomers(Array.isArray(data) ? data : data.results || []);
+            setCount(data.count);
+            setNextPage(data.next);
+            setPrevPage(data.previous);
+            setCurrentPage(parseInt(page || "1"));
+
+        } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        }
+    };
+
+    fetchCustomers();
+   }, [shipmentId, currentUrl]);
+
 
     const handleAddCustomer = (newCustomer) => {
         setCustomers(prev => [...prev, newCustomer]);
@@ -257,12 +264,6 @@ const Customer = ({ shipmentId }) => {
                             onClick={() => setShowCreateModal(true)}
                         >
                             <FaPlus /> New Customer
-                        </Button>
-                        <Button
-                            variant="info"
-                            onClick={() => setShowCreateModal(true)}
-                        >
-                            <FaPlus /> New Customer to Shipment
                         </Button>
                     </div>
                 </div>

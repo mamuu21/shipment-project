@@ -13,6 +13,8 @@ const DashboardCharts = () => {
     marineVehicleData: []
   });
 
+  const COLORS = ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949'];
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
@@ -27,6 +29,8 @@ const DashboardCharts = () => {
     };
 
     fetchChartData();
+    const interval = setInterval(fetchChartData, 60000); // Refresh every 60s
+    return () => clearInterval(interval);
   }, []);
 
   const vehicleData = activeTab === "air" ? chartData.airVehicleData : chartData.marineVehicleData;
@@ -39,20 +43,23 @@ const DashboardCharts = () => {
           <div className="card-body">
             <h5 className="card-title">Revenue Trend</h5>
             <div style={{ height: '250px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="air" stackId="a" fill="#7F56D9" name="Air" />
-                  <Bar dataKey="sea" stackId="a" fill="#3B82F6" name="Sea" />
-                </BarChart>
-              </ResponsiveContainer>
+              {chartData.revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="air" stackId="a" fill="#7F56D9" name="Air" />
+                    <Bar dataKey="sea" stackId="a" fill="#3B82F6" name="Sea" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-muted text-center mt-5">No revenue data available.</div>
+              )}
             </div>
             <div className="mt-3 small text-muted">
               <div><span className="text-success fw-semibold">+5%</span> increase in kilograms and CBM with total 2700 shipped.</div>
-              <div>Increase in kilograms and CBM with total 2700 shipped.</div>
             </div>
           </div>
         </div>
@@ -83,23 +90,27 @@ const DashboardCharts = () => {
             </div>
 
             <div style={{ height: '250px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={vehicleData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {vehicleData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {vehicleData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={vehicleData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      dataKey="value"
+                    >
+                      {vehicleData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-muted text-center mt-5">No vehicle data available.</div>
+              )}
             </div>
 
             <div className="mt-2 text-center text-muted small">based on parcels/month</div>

@@ -212,22 +212,35 @@ class ChartDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        # Group by created_at month, count air & sea shipments
         revenue_data = Shipment.objects.annotate(
             month=TruncMonth('created_at')
         ).values('month').annotate(
-            air=Count('id', filter=Q(transport='Air')),
-            sea=Count('id', filter=Q(transport='Sea'))
+            air=Count('id', filter=Q(transport__iexact='Air')),
+            sea=Count('id', filter=Q(transport__iexact='Sea'))
         ).order_by('month')
 
-        air_vehicle_data = Shipment.objects.filter(transport='air').values('vessel').annotate(value=Count('id'))
-        marine_vehicle_data = Shipment.objects.filter(transport='marine').values('vessel').annotate(value=Count('id'))
+        # Add a readable month name
+        for entry in revenue_data:
+            if entry["month"]:
+                entry["name"] = entry["month"].strftime('%Y-%m')
+            else:
+                entry["name"] = "Unknown"
+
+        # Pie chart: vehicle breakdowns
+        air_vehicle_data = Shipment.objects.filter(
+            transport__iexact='Air'
+        ).values('vessel').annotate(value=Count('id'))
+
+        marine_vehicle_data = Shipment.objects.filter(
+            transport__iexact='Marine'
+        ).values('vessel').annotate(value=Count('id'))
 
         return Response({
             'revenueData': list(revenue_data),
             'airVehicleData': list(air_vehicle_data),
             'marineVehicleData': list(marine_vehicle_data)
         })
-
 
 # ==============================
 # PDF Invoice Generation

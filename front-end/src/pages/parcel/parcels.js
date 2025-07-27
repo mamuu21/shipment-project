@@ -17,46 +17,46 @@ const ParcelPage = ({ customerId, shipmentId }) => {
   const [currentUrl, setCurrentUrl] = useState("/parcels/");
 
 
-  useEffect(() => { 
+  useEffect(() => {
     const fetchParcels = async () => {
       try {
         const token = localStorage.getItem('access_token');
         const headers = { Authorization: `Bearer ${token}` };
 
-        let fetchUrl = '/parcels/';
+        // Build query parameters
         const queryParams = [];
+        if (customerId) queryParams.push(`customer=${customerId}`);
+        if (shipmentId) queryParams.push(`shipment=${shipmentId}`);
 
-        if (customerId) {
-          queryParams.push(`customer=${customerId}`);
-        }
+        // Build the final fetch URL (pagination + filters)
+        let url = new URL(currentUrl, window.location.origin);
+        queryParams.forEach(param => {
+          const [key, value] = param.split('=');
+          url.searchParams.set(key, value); // set or overwrite param
+        });
 
-        if (shipmentId) {
-          queryParams.push(`shipment=${shipmentId}`);
-        }
+        const finalUrl = url.pathname + '?' + url.searchParams.toString();
 
-        if (queryParams.length > 0) {
-          fetchUrl += `?${queryParams.join('&')}`;
-        }
-
-        const response = await api.get(fetchUrl, { headers });
+        // Fetch the data
+        const response = await api.get(finalUrl, { headers });
         const data = response.data;
 
+        // Set the data into state
         setParcels(Array.isArray(data) ? data : data.results || []);
         setCount(data.count);
         setNextPage(data.next);
         setPrevPage(data.previous);
 
-        const parsedUrl = new URL(currentUrl, window.location.origin);
-        const page = parseInt(parsedUrl.searchParams.get("page") || "1");
+        const page = parseInt(url.searchParams.get("page") || "1");
         setCurrentPage(page);
-        
+
       } catch (error) {
         console.error('Failed to fetch parcels:', error);
       }
     };
 
     fetchParcels();
-  }, [customerId, shipmentId, currentUrl]); 
+  }, [customerId, shipmentId, currentUrl]);
 
 
   const handleExportCSV = () => {
