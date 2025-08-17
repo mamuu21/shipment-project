@@ -4,7 +4,8 @@ from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 from django.http import FileResponse
 
-from rest_framework import generics, permissions
+from rest_framework import generics, status
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,25 +15,34 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Shipment, Customer, Parcel, Document, Invoice
 from .serializers import (
     ShipmentSerializer, CustomerSerializer, ParcelSerializer,
-    DocumentSerializer, InvoiceSerializer, RegisterSerializer
+    DocumentSerializer, InvoiceSerializer, RegisterSerializer,
+    CustomTokenObtainPairSerializer
 )
-from .permissions import IsAdmin, IsCustomer, IsStaff, IsAdminOrStaff
+from .permissions import RoleBasedAccessPermission, IsSelfOrAdmin
 from .filters import InvoiceFilter
 
 import io
+import logging
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 
+
 User = get_user_model()
 
-# ==============================
-# Auth & Registration
-# ==============================
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
+
+logger = logging.getLogger(__name__)
+
+
+class StaffDeleteProtectedMixin:
+    """
+    Mixin that prevents staff from deleting objects.
+    Admins can still delete.
+    """
+    def destroy(self, request, *args, **kwargs):
+        if request.user.role == 'staff':
+            return Response({"detail": "Staff cannot delete objects."}, status=403)
+        return super().destroy(request, *args, **kwargs)
 
 
 # ==============================
@@ -44,12 +54,58 @@ class RoleBasedQuerysetMixin:
 
     def get_queryset(self):
         user = self.request.user
+        qs = self.model.objects.all()
+
+        # Admin & staff see all
         if user.role in ['admin', 'staff']:
-            return self.model.objects.all()
-        elif user.role == 'customer':
+            return qs
+
+        # Customers see only their own data
+        if user.role == 'customer':
             filter_kwargs = {self.customer_field: user.email}
-            return self.model.objects.filter(**filter_kwargs)
+            return qs.filter(**filter_kwargs)
+
         return self.model.objects.none()
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        logger.info(f"{self.request.user.email} created {self.model.__name__} ID={instance.pk}")
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        logger.info(f"{self.request.user.email} updated {self.model.__name__} ID={instance.pk}")
+
+    def perform_destroy(self, instance):
+        logger.info(f"{self.request.user.email} deleted {self.model.__name__} ID={instance.pk}")
+        super().perform_destroy(instance)
+
+
+
+# ==============================
+#  Register Views
+# ==============================
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        data = {
+            "user": serializer.data,
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 class BaseUserView:
@@ -65,26 +121,15 @@ class ShipmentListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.List
     filterset_fields = ['shipment_no', 'transport', 'origin', 'destination', 'status']
     model = Shipment
     customer_field = 'customers__email'
-
-    def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrStaff()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
-class ShipmentDetailView(BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
+class ShipmentDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ShipmentSerializer
     model = Shipment
     lookup_field = 'pk'
     customer_field = 'customers__email'
-
-    def get_queryset(self):
-        return super().get_queryset()
-
-    def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdmin()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
 class ShipmentCustomersView(generics.ListAPIView):
@@ -104,26 +149,27 @@ class CustomerListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.List
     serializer_class = CustomerSerializer
     model = Customer
     customer_field = 'email'
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = [
+        'name', 'email', 'phone',
+        'parcels__shipment', 'parcels__shipment__shipment_no',
+    ]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
-    def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrStaff()]
-        return [IsAuthenticated()]
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.distinct()
 
 
-class CustomerDetailView(BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
+class CustomerDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CustomerSerializer
     model = Customer
     customer_field = 'email'
-
-    def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdmin()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission, IsSelfOrAdmin]
 
 
 # ==============================
-# Parcel Views
+#  Parcel Views
 # ==============================
 class ParcelListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.ListCreateAPIView):
     serializer_class = ParcelSerializer
@@ -131,22 +177,14 @@ class ParcelListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.ListCr
     filterset_fields = ['parcel_no', 'customer', 'shipment', 'shipment__shipment_no']
     model = Parcel
     customer_field = 'customer__email'
-
-    def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrStaff()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
-class ParcelDetailView(BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
+class ParcelDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ParcelSerializer
     model = Parcel
     customer_field = 'customer__email'
-
-    def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdmin()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
 # ==============================
@@ -158,22 +196,14 @@ class DocumentListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.List
     filterset_fields = ['document_no', 'shipment__shipment_no', 'customer__name', 'parcel__parcel_no', 'document_type']
     model = Document
     customer_field = 'customer__email'
-
-    def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrStaff()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
-class DocumentDetailView(BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
+class DocumentDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DocumentSerializer
     model = Document
     customer_field = 'customer__email'
-
-    def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdmin()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
 # ==============================
@@ -186,22 +216,14 @@ class InvoiceListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.ListC
     model = Invoice
     customer_field = 'customer__email'
     ordering = ['-issue_date']
-
-    def get_permissions(self):
-        if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrStaff()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
-class InvoiceDetailView(BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
+class InvoiceDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuerysetMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = InvoiceSerializer
     model = Invoice
     customer_field = 'customer__email'
-
-    def get_permissions(self):
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdmin()]
-        return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
 # ==============================
@@ -212,7 +234,6 @@ class ChartDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Group by created_at month, count air & sea shipments
         revenue_data = Shipment.objects.annotate(
             month=TruncMonth('created_at')
         ).values('month').annotate(
@@ -220,14 +241,9 @@ class ChartDataView(APIView):
             sea=Count('id', filter=Q(transport__iexact='Sea'))
         ).order_by('month')
 
-        # Add a readable month name
         for entry in revenue_data:
-            if entry["month"]:
-                entry["name"] = entry["month"].strftime('%Y-%m')
-            else:
-                entry["name"] = "Unknown"
+            entry["name"] = entry["month"].strftime('%Y-%m') if entry["month"] else "Unknown"
 
-        # Pie chart: vehicle breakdowns
         air_vehicle_data = Shipment.objects.filter(
             transport__iexact='Air'
         ).values('vessel').annotate(value=Count('id'))
@@ -241,6 +257,7 @@ class ChartDataView(APIView):
             'airVehicleData': list(air_vehicle_data),
             'marineVehicleData': list(marine_vehicle_data)
         })
+
 
 # ==============================
 # PDF Invoice Generation

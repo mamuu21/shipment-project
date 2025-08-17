@@ -1,14 +1,15 @@
 from django.db import models
 from djmoney.models.fields import MoneyField
+from djmoney.money import Money
 from django.utils.timezone import now
 from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('Customer', 'Customer'),
-        ('Staff', 'Staff'),
-        ('Admin', 'Admin'),
+        ('customer', 'Customer'),
+        ('staff', 'Staff'),
+        ('admin', 'Admin'),
     ]
     
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
@@ -44,7 +45,8 @@ class Customer(models.Model):
 class Shipment(models.Model):
     STATUS_CHOICES = [
         ('In-transit', 'In-transit'),
-        ('Delivered', 'Delivered')
+        ('Delivered', 'Delivered'),
+        ('Not-boarded', 'Not-boarded')
     ]
     
     TRANSPORT = [
@@ -149,6 +151,7 @@ class Parcel(models.Model):
     payment = models.CharField(max_length=20, choices=[('Paid', 'Paid'), ('Unpaid', 'Unpaid')], default='Unpaid')
     commodity_type = models.CharField(max_length=255, choices=COMMODITY_TYPE, default='parcel')
     description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=50, default='Pending')
 
     def formatted_weight(self):
         return f"{self.weight} {self.weight_unit}"
@@ -158,6 +161,11 @@ class Parcel(models.Model):
     
     def __str__(self):
         return self.parcel_no
+    
+    def save(self, *args, **kwargs):
+        if self.shipment:
+            self.status = self.shipment.status
+        super().save(*args, **kwargs)
 
 
 class Document(models.Model):
@@ -208,32 +216,73 @@ class Invoice(models.Model):
         on_delete=models.CASCADE,
         related_name='invoices'
     )
-    parcel = models.ForeignKey(
-        'Parcel',
-        on_delete=models.CASCADE,
-        related_name='invoices',
-        null=True,
-        blank=True
-    )
     issue_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
-    total_amount = MoneyField(max_digits=14, decimal_places=2, default_currency='TZS')
-    tax = MoneyField(max_digits=14, decimal_places=2, default_currency='TZS', default=0)
-    final_amount = MoneyField(max_digits=14, decimal_places=2, default_currency='TZS')
+    total_amount = MoneyField(max_digits=14, decimal_places=2, default=Money(0, 'TZS'), default_currency='TZS')
+    tax = MoneyField(max_digits=14, decimal_places=2, default=Money(0, 'TZS'), default_currency='TZS')
+    final_amount = MoneyField(max_digits=14, decimal_places=2, default=Money(0, 'TZS'), default_currency='TZS')
     status = models.CharField(
         max_length=20,
         choices=[('Pending', 'Pending'), ('Paid', 'Paid'), ('Overdue', 'Overdue')],
         default='Pending'
     )
+    
+    def calculate_total_amount(self):
+        """Sum up all invoice item costs."""
+        items_total = sum(item.cost for item in self.items.all())
+        self.total_amount = items_total
 
     def calculate_final_amount(self):
-        """Automatically calculate the final amount after tax and discount."""
+        """Automatically calculate the final amount after tax."""
         self.final_amount = self.total_amount + self.tax
 
     def save(self, *args, **kwargs):
-        self.calculate_final_amount()
+        # Save invoice first
         super().save(*args, **kwargs)
+
+        # Automatically add all unbilled parcels of this customer to this invoice
+        from .models import InvoiceItem
+        parcels = self.customer.parcels.filter(invoice_items__isnull=True)
+        for parcel in parcels:
+            InvoiceItem.objects.get_or_create(invoice=self, parcel=parcel, defaults={'cost': parcel.charge})
+
+        # Recalculate totals after adding items
+        self.calculate_total_amount()
+        self.calculate_final_amount()
+        super().save(update_fields=['total_amount', 'final_amount'])
 
     def __str__(self):
         return f"{self.invoice_no} - {self.customer.name}"
 
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='items'
+    )
+    parcel = models.ForeignKey(
+        'Parcel',
+        on_delete=models.CASCADE,
+        related_name='invoice_items'
+    )
+    # Cost per parcel in this invoice (can copy from parcel.charge or override)
+    cost = MoneyField(max_digits=14, decimal_places=2, default_currency='TZS')
+
+    def save(self, *args, **kwargs):
+        # If cost is not set, copy it from the parcel's charge
+        if not self.cost:
+            self.cost = self.parcel.charge or 0
+        super().save(*args, **kwargs)
+        
+        if self.invoice:
+            self.invoice.calculate_total_amount()
+            self.invoice.calculate_final_amount()
+            self.invoice.save(update_fields=['total_amount', 'final_amount'])
+        
+        
+        
+    def __str__(self):
+        return f"Item for {self.invoice.invoice_no} - Parcel {self.parcel.parcel_no}"
+
+    class Meta:
+        unique_together = ('invoice', 'parcel')

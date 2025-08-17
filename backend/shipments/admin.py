@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Shipment, Customer, Parcel, Document, Invoice
+from .models import Shipment, Customer, Parcel, Document, Invoice, InvoiceItem
 
 from django.contrib.auth.admin import UserAdmin
 from .models import User
@@ -95,12 +95,29 @@ class DocumentAdmin(admin.ModelAdmin):
     get_document_type.short_description = 'Document Type'
     
     
+class InvoiceItemInline(admin.TabularInline):
+    model = InvoiceItem
+    readonly_fields = ('parcel', 'parcel_commodity_type', 'parcel_description', 'cost')
+    extra = 0
+    can_delete = False
+
+    def parcel_commodity_type(self, obj):
+        return obj.parcel.commodity_type
+    parcel_commodity_type.short_description = 'Commodity Type'
+
+    def parcel_description(self, obj):
+        return obj.parcel.description
+    parcel_description.short_description = 'Description'
+
+    
+    
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = ('invoice_no', 'customer', 'total_amount', 'due_date', 'status')
     list_filter = ('status', 'issue_date')
     search_fields = ('invoice_no', 'customer__name')
     ordering = ('-issue_date',)
-
+    inlines = [InvoiceItemInline]
+    
     def save_model(self, request, obj, form, change):
         obj.calculate_final_amount()
         super().save_model(request, obj, form, change)
