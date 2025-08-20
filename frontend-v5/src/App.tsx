@@ -34,9 +34,7 @@ function App() {
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/shipments" element={<ShipmentsPage />} />
-        <Route path="/customers" element={<CustomersPage params={{
-            shipmentId: undefined
-          }} />} />
+        <Route path="/customers" element={<CustomersPage/>} />
         <Route path="/parcels" element={<ParcelPage />} />
         <Route path="/invoices" element={<InvoicePage />} />
         <Route path="/track" element={<TrackShipment />} />

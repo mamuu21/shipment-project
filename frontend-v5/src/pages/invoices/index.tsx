@@ -18,7 +18,10 @@ type Invoice = {
   id?: string;
   invoice_no: string;
   customer?: { name: string };
-  shipment?: { vessel: string;} ;
+  shipment?: { 
+    vessel: string,
+    shipment_no: string
+  } ;
   total_amount: number;
   issue_date: string;
   due_date: string;
@@ -30,20 +33,27 @@ type Customer = {
   name: string;
 };
 
-type Shipment = {
-  shipment_no: string;
-};
+
 
 interface InvoicePageProps {
   customerId?: string; 
 }
+
+interface PaginatedInvoices {
+  results: Invoice[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+}
+
+interface PaginatedCustomers { results: Customer[]; }
+
 
 const InvoicePage = ({customerId}: InvoicePageProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState<'All' | 'Paid' | 'Pending' | 'Overdue'>('All');
@@ -55,14 +65,14 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
   
   const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchInvoices = async () => {
       setIsLoading(true);
-      setError(null);
+     
 
       try {
         const token = localStorage.getItem("access_token");
@@ -77,7 +87,7 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
           url.searchParams.set('customer_id', customerId);
         }
 
-        const response = await api.get(url.pathname + url.search, { headers });
+        const response = await api.get<PaginatedInvoices>(url.pathname + url.search, { headers });
         const data = response.data;
 
         setInvoices(Array.isArray(data) ? data : data?.results || []);
@@ -107,7 +117,7 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
       try {
         const token = localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/customers/', { headers });
+        const response = await api.get<PaginatedCustomers>('/customers/', { headers });
         setCustomers(response.data.results || []);
       } catch (err) {
         console.error('Failed to fetch customers:', err);
@@ -122,24 +132,7 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
   }, [customerId, toast]);
 
  
-  useEffect(() => {
-    const fetchShipments = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/shipments/', { headers });
-        setShipments(response.data.results || []);
-      } catch (err) {
-        console.error('Failed to fetch shipments:', err);
-        toast({
-          title: 'Error',
-          description: 'Failed to load shipments',
-          variant: 'destructive',
-        });
-      }
-    };
-    fetchShipments();
-  }, [toast]);
+  
 
   const handleAddInvoice = (newInvoice: Invoice) => {
     setInvoices(prev => [newInvoice, ...prev]);
@@ -295,7 +288,8 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => prevPage && setCurrentPage(currentPage - 1)}
-                disabled={!prevPage}
+                className={!prevPage ? 'opacity-50 pointer-events-none' : ''}
+
               />
             </PaginationItem>
             {[...Array(Math.ceil(count / itemsPerPage))].map((_, i) => (
@@ -311,7 +305,8 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
             <PaginationItem>
               <PaginationNext
                 onClick={() => nextPage && setCurrentPage(currentPage + 1)}
-                disabled={!nextPage}
+                className={!nextPage ? 'opacity-50 pointer-events-none' : ''}
+
               />
             </PaginationItem>
           </PaginationContent>
@@ -323,7 +318,6 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
         onClose={() => setShowModal(false)} 
         onAdd={handleAddInvoice}
         customers={customers}
-        shipments={shipments}
       />
 
       <DeleteInvoiceModal

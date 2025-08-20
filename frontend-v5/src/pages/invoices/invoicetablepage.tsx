@@ -32,7 +32,7 @@ export const InvoiceTablePage = ({ customerId }: { customerId: string }) => {
         const url = new URL('/invoices/', 'http://127.0.0.1:8000/api');
         if (customerId) url.searchParams.set('customer_id', customerId);
 
-        const res = await api.get(url.pathname + url.search, { headers });
+        const res = await api.get<{ results: Invoice[] }>(url.pathname + url.search, { headers });
         setInvoices(res.data.results || []);
       } catch (err: any) {
         console.error(err);
@@ -78,7 +78,7 @@ export const InvoiceTablePage = ({ customerId }: { customerId: string }) => {
         <Button
           onClick={() => {
             if (filteredInvoices.length > 0) {
-              generateInvoicePDF(filteredInvoices[0]); // Generate PDF for first invoice
+              generateInvoicePDF(filteredInvoices[0] as any); // Generate PDF for first invoice
             } else {
               toast({
                 title: 'No invoices',

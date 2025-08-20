@@ -279,7 +279,8 @@ export const ShipmentTable = ({
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => prevPage && setCurrentPage(currentPage - 1)}
-                disabled={!prevPage}
+                className={!prevPage ? 'opacity-50 pointer-events-none' : ''}
+
               />
             </PaginationItem>
             {[...Array(Math.ceil(count / 10))].map((_, i) => (
@@ -295,7 +296,8 @@ export const ShipmentTable = ({
             <PaginationItem>
               <PaginationNext
                 onClick={() => nextPage && setCurrentPage(currentPage + 1)}
-                disabled={!nextPage}
+                className={!nextPage ? 'opacity-50 pointer-events-none' : ''}
+
               />
             </PaginationItem>
           </PaginationContent>

@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import api from '@/utils/api';
-import { getCurrentUser } from '@/utils/auth';
+// import { getCurrentUser } from '@/utils/auth';
 import BackArrow from '@/components/ui/backarrow';
-import { ParcelPage } from '../parcels';
-import InvoicePDFPage from './invoicepdfpage';
+
 import InvoiceTablePage from '../invoices/invoicetablepage';
 import ParcelTablePage from '../parcels/parceltablepage';
 
@@ -31,11 +30,11 @@ const CustomerDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    setCurrentUser(user);
+    // const user = getCurrentUser();
+    // setCurrentUser(user);
 
     const fetchCustomer = async () => {
       try {
@@ -43,7 +42,7 @@ const CustomerDetails = () => {
         const res = await api.get(`/customers/${id}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setCustomer(res.data);
+        setCustomer(res.data as Customer);
       } catch (error) {
         console.error('Failed to fetch customer:', error);
       } finally {
@@ -53,6 +52,12 @@ const CustomerDetails = () => {
 
     fetchCustomer();
   }, [id]);
+
+  if (!id) {
+    return <div className="container py-4">
+      <p className="text-center text-destructive">Invalid customer ID.</p>
+    </div>;
+  }
 
   if (loading) {
     return (

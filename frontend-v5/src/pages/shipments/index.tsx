@@ -24,6 +24,14 @@ type Shipment = {
   documents: number;
 };
 
+interface ShipmentResponse {
+  results: Shipment[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+}
+
+
 export const ShipmentPage = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("All");
@@ -44,7 +52,7 @@ export const ShipmentPage = () => {
       const token = localStorage.getItem("access_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await api.get(baseUrl + `?page=${currentPage}`, { headers });
+      const response = await api.get<ShipmentResponse>(baseUrl + `?page=${currentPage}`, { headers });
       const data = response.data;
 
       setShipments(data.results);

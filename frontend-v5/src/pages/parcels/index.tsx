@@ -8,27 +8,9 @@ import { DeleteDialog } from './delete';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, FileUp, } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import type { Parcel } from './type'
 
-
-
-interface Parcel {
-  parcel_no: string;
-  shipment: {
-    shipment_no: string;
-    status:  | 'In-transit' | 'Delivered';
-  };
-  customer_id: string;   
-  weight: number | '';  
-  weight_unit: 'kg' | 'lbs' | 'tons';
-  volume: number | '';
-  volume_unit: 'm³' | 'ft³';
-  charge: number | '';
-  payment: 'Paid' | 'Unpaid';
-  commodity_type: 'Box' | 'Parcel' | 'Envelope';
-  description: string;
-  customer?: { name?: string }; 
-}
 
 interface Shipment {
   shipment_no: string;
@@ -44,10 +26,18 @@ interface ParcelPageProps {
   shipmentId?: string;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 const ITEMS_PER_PAGE = 10;
 
 export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -63,7 +53,8 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filter, setFilter] = useState<'All' | 'In-transit' | 'Delivered' | 'Pending'>('All');
-  
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   // Fetch parcels with pagination & filters
   useEffect(() => {
@@ -81,7 +72,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         if (customerId) url.searchParams.set('customer', customerId);
         if (shipmentId) url.searchParams.set('shipment', shipmentId);
 
-        const response = await api.get(url.pathname + url.search, { headers });
+        const response = await api.get<PaginatedResponse<Parcel>>(url.pathname + url.search, { headers });
         const data = response.data;
 
         setParcels(Array.isArray(data) ? data : data?.results || []);
@@ -105,7 +96,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
       try {
         const token = localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/shipments/', { headers });
+        const response = await api.get<PaginatedResponse<Shipment>>('/shipments/', { headers });
         setShipments(response.data.results || []);
       } catch (err) {
         console.error('Failed to fetch shipments:', err);
@@ -120,7 +111,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
       try {
         const token = localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/customers/', { headers });
+        const response = await api.get<PaginatedResponse<Customer>>('/customers/', { headers });
         setCustomers(response.data.results || []);
       } catch (err) {
         console.error('Failed to fetch customers:', err);
@@ -162,19 +153,42 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
   };
 
   const handleDelete = async () => {
-    if (!selectedParcel?.parcel_no) return;
-    
+    if (!selectedParcel?.parcel_no) {
+      console.error('No parcel selected for deletion');
+      return;
+    }
+
+    setIsDeleting(true);
+
     try {
       const token = localStorage.getItem('access_token');
-      await api.delete(`/parcels/${selectedParcel.parcel_no}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await api.delete(`/parcels/${selectedParcel.parcel_no}/`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+        }
       });
+
+      // Update local state
       setParcels(prev => prev.filter(p => p.parcel_no !== selectedParcel.parcel_no));
       setCount(prev => prev - 1);
-      setShowDeleteModal(false);
+      
+      // Show success notification
+      toast({
+        title: 'Success',
+        description: 'Parcel deleted successfully',
+      });
+
     } catch (err: any) {
       console.error('Delete failed:', err);
-      alert(err?.response?.data?.detail || 'Failed to delete parcel');
+      toast({
+        title: 'Error',
+        description: err?.response?.data?.detail || 'Failed to delete parcel',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setSelectedParcel(null);
     }
   };
 
@@ -197,7 +211,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         description: formData.description,
       };
 
-      const response = await api.post('/parcels/', payload, {
+      const response = await api.post<Parcel>('/parcels/', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -278,13 +292,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         </div>
       </div>
 
-      <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList>
-          <TabsTrigger value="All">All</TabsTrigger>
-          <TabsTrigger value="Delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="In-transit">In-transit</TabsTrigger>
-        </TabsList>
-      </Tabs>
+
 
       <ParcelTable
         parcels={filteredData}
@@ -299,6 +307,8 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         onPageChange={setCurrentPage}
         prevPage={prevPage}
         nextPage={nextPage}
+        filter={filter}
+        setFilter={setFilter}
       />
 
       <ParcelForm
@@ -315,6 +325,7 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         onOpenChange={setShowDeleteModal}
         onConfirm={handleDelete}
         itemName={selectedParcel?.parcel_no || ''}
+        isDeleting={isDeleting}
       />
     </div>
 );

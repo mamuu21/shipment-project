@@ -1,14 +1,13 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow, TableHeader } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import api from '@/utils/api';
-import { getCurrentUser } from '@/utils/auth';
+// import { getCurrentUser } from '@/utils/auth';
 import BackArrow from '@/components/ui/backarrow';
 
 interface InvoiceItem {
@@ -49,11 +48,11 @@ const InvoiceDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    setCurrentUser(user);
+    // const user = getCurrentUser();
+    // setCurrentUser(user);
 
     const fetchInvoice = async () => {
       try {
@@ -61,7 +60,7 @@ const InvoiceDetails = () => {
         const res = await api.get(`/invoices/${id}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setInvoice(res.data);
+        setInvoice(res.data as Invoice);
       } catch (error) {
         console.error('Failed to fetch invoice:', error);
       } finally {

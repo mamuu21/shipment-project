@@ -68,12 +68,13 @@ export const generateInvoicePDF = (invoice: Invoice) => {
 
   // Table
   const tableRows = invoice.items.map(item => [
-    item.commodity_type || '-',
-    item.description,
-    item.parcel_charge.toFixed(2),
-    '1',
-    `TZS ${item.cost}`,
+    item.commodity_type ? String(item.commodity_type) : '-',
+    item.description ? String(item.description) : '-',
+    item.parcel_charge != null ? item.parcel_charge.toFixed(2) : '0.00',
+    '1', // quantity
+    item.cost != null ? `TZS ${String(item.cost)}` : 'TZS 0.00',
   ]);
+
 
   autoTable(doc, {
     startY: 110,
@@ -91,15 +92,16 @@ export const generateInvoicePDF = (invoice: Invoice) => {
   // Totals
   doc.setFont('helvetica', 'bold');
   doc.text('SUBTOTAL', 14, finalY);
-  doc.text(`TZS ${invoice.total_amount}`, 190, finalY, { align: 'right' });
+  doc.text(invoice.total_amount != null ? `TZS ${String(invoice.total_amount)}` : 'TZS 0.00', 190, finalY, { align: 'right' });
 
   doc.setFont('helvetica', 'normal');
   doc.text('Tax', 14, finalY + 6);
-  doc.text(invoice.tax, 190, finalY + 6, { align: 'right' });
+  doc.text(invoice.tax != null ? String(invoice.tax) : '0.00', 190, finalY + 6, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
   doc.text('TOTAL', 14, finalY + 12);
-  doc.text(`TZS ${invoice.final_amount}`, 190, finalY + 12, { align: 'right' });
+  doc.text(invoice.final_amount != null ? `TZS ${String(invoice.final_amount)}` : 'TZS 0.00', 190, finalY + 12, { align: 'right' });
+
 
   // Signature
   doc.setFontSize(12);

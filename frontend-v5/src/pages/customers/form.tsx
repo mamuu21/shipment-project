@@ -15,11 +15,25 @@ interface Customer {
   status: 'Active' | 'Dormant';
 }
 
+interface Shipment {
+  id: string;
+  shipment_no: string;
+}
+
+interface Parcel {
+  id: string;
+  parcel_no: string;
+}
+
+
 interface CustomerFormProps {
   showCreateModal: boolean;
   setShowCreateModal: (show: boolean) => void;
   refreshCustomers: () => void;
   initialData?: Customer;
+  shipmentId?: string;
+  shipments: Shipment[];
+  parcels: Parcel[];
 }
 
 export const CustomerForm = ({ 

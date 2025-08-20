@@ -20,7 +20,7 @@ const registerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   password2: z.string().min(8, "Please confirm your password"),
   role: z.enum(["customer", "staff", "admin"], {
-    required_error: "Please select a role",
+    message: "Please select a role",
   }),
 }).refine((data) => data.password === data.password2, {
   message: "Passwords do not match",
@@ -47,19 +47,24 @@ export function RegisterForm() {
   const onSubmit = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const roleTitleCase = values.role.charAt(0).toUpperCase() + values.role.slice(1).toLowerCase();
+      // const roleTitleCase = values.role.charAt(0).toUpperCase() + values.role.slice(1).toLowerCase();
 
-      const dataToSend = { ...values, role: roleTitleCase };
+      const dataToSend = values
 
       const { user } = await register(dataToSend);
       toast.success(`Welcome, ${user.username}!`);
       navigate("/dashboard");
-    } catch (error: any) {
-      toast.error("Registration failed: " + (error?.response?.data?.detail || error.message));
-    } finally {
-      setIsLoading(false);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error("Registration failed: " + error.message);
+      } else {
+        toast.error("Registration failed: Unknown error");
+      }
     }
-  };
+    finally {
+          setIsLoading(false);
+        }
+      };
 
   return (
     <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-sm border">

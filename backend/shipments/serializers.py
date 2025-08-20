@@ -47,6 +47,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['role'] = user.role
         return token
+    
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['user'] = {
+            'id': self.user.id,
+            'email': self.user.email,
+            'role': self.user.role
+        }
+        return data
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -166,6 +175,9 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         
 class InvoiceSerializer(serializers.ModelSerializer):
     customer = CustomerSerializer(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=Customer.objects.all(), source='customer',  write_only=True
+    )
     items = InvoiceItemSerializer(many=True, read_only=True) 
     total_amount = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
@@ -174,7 +186,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = [
-            'invoice_no', 'customer', 'issue_date', 'due_date', 
+            'invoice_no', 'customer', 'issue_date', 'due_date', 'customer_id',
             'total_amount', 'tax', 'final_amount', 'status', 'items'
         ]
 

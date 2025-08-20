@@ -7,7 +7,6 @@ type Invoice = {
   id?: string;
   invoice_no: string;
   customer?: { name: string };
-  // shipment?: { vessel: string;} ;
   total_amount: number;
   issue_date: string;
   due_date: string;
@@ -51,8 +50,7 @@ export const InvoiceTable = ({ invoices, onView, onEdit, onDelete }: InvoiceTabl
           invoices.map((inv) => (
             <TableRow key={inv.id ?? inv.invoice_no}>
               <TableCell>{inv.invoice_no}</TableCell>
-              <TableCell>{inv.customer?.name || 'N/A'}</TableCell>
-              {/* <TableCell>{inv.shipment?.vessel || 'N/A'}</TableCell> */}
+              <TableCell>{inv.customer?.name}</TableCell>
               <TableCell>{inv.issue_date}</TableCell>
               <TableCell>{inv.due_date}</TableCell>
               <TableCell>{inv.total_amount}</TableCell>

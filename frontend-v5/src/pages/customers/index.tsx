@@ -36,9 +36,18 @@ interface CustomersPageProps {
   shipmentId?: string;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+
 export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+ 
 
   // Data state
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -75,7 +84,7 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
       if (filter !== 'All') url.searchParams.set('status', filter);
       if (searchQuery) url.searchParams.set('search', searchQuery);
 
-      const response = await api.get(url.pathname + url.search, { headers });
+      const response = await api.get<PaginatedResponse<Customer>>(url.pathname + url.search, { headers });
       const data = response.data;
 
       setCustomers(Array.isArray(data) ? data : data?.results || []);
@@ -101,7 +110,7 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
       try {
         const token = localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/shipments/', { headers });
+        const response = await api.get<PaginatedResponse<Shipment>>('/shipments/', { headers });
         setShipments(response.data.results || []);
       } catch (err) {
         console.error('Failed to fetch shipments:', err);
@@ -121,7 +130,7 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
       try {
         const token = localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await api.get('/parcels/', { headers });
+        const response = await api.get<PaginatedResponse<Parcel>>('/parcels/', { headers });
         setParcels(response.data.results || []);
       } catch (err) {
         console.error('Failed to fetch parcels:', err);
@@ -242,7 +251,7 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
 
       <DeleteDialog
         open={showDeleteModal}
-        setOpen={setShowDeleteModal}
+        onOpenChange={setShowDeleteModal}
         onConfirm={handleDeleteCustomer}
         itemName={selectedCustomer?.name || ''}
         isDeleting={isDeleting}

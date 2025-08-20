@@ -8,28 +8,25 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from '@/components/ui/button';
 import api from '@/utils/api';
+import { toast } from '@/hooks/use-toast';
 
 type Customer = {
   id: string;
   name: string;
 };
 
-type Shipment = {
-  shipment_no: string;
-};
+
 
 type Invoice = {
-  id?: string;
   invoice_no: string;
   customer_id: string;
-  customer?: { name?: string };
-  shipment?: {
-    shipment_no: string;
-  } | null;
-  total_amount: number;
+  customer?: { name: string };
   issue_date: string;
   due_date: string;
-  status: 'Paid' | 'Pending' | 'Overdue';
+  total_amount: number;
+  tax: number;
+  final_amount: number;
+  status: 'Pending' | 'Paid' | 'Overdue';
 };
 
 interface InvoiceModalProps {
@@ -37,126 +34,135 @@ interface InvoiceModalProps {
   onClose: () => void;
   onAdd: (invoice: Invoice) => void;
   customers: Customer[];
-  shipments: Shipment[];
 }
 
 export const InvoiceModal = ({
   show,
   onClose,
   onAdd,
-  customers = [],
-  shipments = []
+  customers = []
 }: InvoiceModalProps) => {
   const [formData, setFormData] = useState({
     invoice_no: "",
     customer_id: "",
-    shipment: "",
-    total_amount: "",
     issue_date: undefined as Date | undefined,
     due_date: undefined as Date | undefined,
-    status: "Pending" as "Paid" | "Pending" | "Overdue"
+    tax: 0,
+    status: "Pending" as "Pending" | "Paid" | "Overdue",
+    // Note: total_amount and final_amount will be calculated automatically
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: name === "total_amount" ? (value === "" ? "" : parseFloat(value)) : value
+      [name]: name === "tax" ? (value === "" ? 0 : parseFloat(value)) : value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
       const token = localStorage.getItem("access_token");
+     
 
+      // Prepare payload according to your backend model
       const payload = {
         invoice_no: formData.invoice_no,
-        customer: formData.customer_id,
-        issue_date: formData.issue_date ? format(formData.issue_date, "yyyy-MM-dd") : "",
+        customer_id: formData.customer_id,
+        issue_date: formData.issue_date ? format(formData.issue_date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
         due_date: formData.due_date ? format(formData.due_date, "yyyy-MM-dd") : "",
-        shipment: formData.shipment ? { shipment_no: formData.shipment } : null,
-        total_amount: typeof formData.total_amount === "string" && formData.total_amount === "" ? 0 : Number(formData.total_amount),
-        status: formData.status
+        tax: formData.tax,
+        status: formData.status,
+        // total_amount and final_amount will be calculated by backend
       };
 
       const response = await api.post("/invoices/", payload, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       onAdd({
-        ...response.data,
+        ...(response.data as Invoice),
         customer: customers.find(c => c.id === formData.customer_id)
       });
+
+      toast({
+        title: 'Success',
+        description: 'Invoice created successfully',
+      });
+
+      setFormData({
+        invoice_no: "",
+        customer_id: "",
+        issue_date: undefined,
+        due_date: undefined,
+        tax: 0,
+        status: "Pending",
+      });
+      
       onClose();
-    } catch (error) {
-      console.error("Error adding invoice:", error);
+    } catch (error: any) {
+      console.error("Error creating invoice:", error);
+      toast({
+        title: 'Error',
+        description: error?.response?.data?.detail || 'Failed to create invoice',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
 
   return (
     <Dialog open={show} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto w-[600px] sm:w-[700px]">
         <DialogHeader>
-          <DialogTitle>Add Invoice</DialogTitle>
+          <DialogTitle>Create Invoice</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Invoice Number</label>
-            <Input name="invoice_no" value={formData.invoice_no} onChange={handleChange} required />
+            <Input 
+              name="invoice_no" 
+              value={formData.invoice_no} 
+              onChange={handleChange} 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Customer</label>
             <Select
-                value={formData.customer_id}
-                onValueChange={(value) => setFormData(prev => ({
-                ...prev,
-                customer: value
-                }))}
+              value={formData.customer_id}
+              onValueChange={(value) => handleSelectChange('customer_id', value)}
+              required
             >
-                <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                    {customer.name}
-                    </SelectItem>
-                ))}
-                </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Shipment</label>
-            <Select
-              value={formData.shipment}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, shipment: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Shipment" />
               </SelectTrigger>
               <SelectContent>
-                {shipments.map((ship) => (
-                  <SelectItem key={ship.shipment_no} value={ship.shipment_no}>
-                    {ship.shipment_no}
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id.toString()}>
+                    {customer.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Total Amount</label>
-            <Input
-              type="number"
-              name="total_amount"
-              value={formData.total_amount}
-              onChange={handleChange}
-              required
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -173,14 +179,14 @@ export const InvoiceModal = ({
                   <Calendar
                     mode="single"
                     selected={formData.issue_date}
-                    onSelect={(date) => setFormData((prev) => ({ ...prev, issue_date: date }))}
+                    onSelect={(date) => setFormData(prev => ({ ...prev, issue_date: date }))}
                   />
                 </PopoverContent>
               </Popover>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Due Date</label>
+              <label className="block text-sm font-medium mb-1">Due Date *</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start text-left font-normal">
@@ -192,7 +198,7 @@ export const InvoiceModal = ({
                   <Calendar
                     mode="single"
                     selected={formData.due_date}
-                    onSelect={(date) => setFormData((prev) => ({ ...prev, due_date: date }))}
+                    onSelect={(date) => setFormData(prev => ({ ...prev, due_date: date }))}
                   />
                 </PopoverContent>
               </Popover>
@@ -200,29 +206,41 @@ export const InvoiceModal = ({
           </div>
 
           <div>
+            <label className="block text-sm font-medium mb-1">Tax (TZS)</label>
+            <Input
+              type="number"
+              name="tax"
+              value={formData.tax}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium mb-1">Status</label>
             <Select
               value={formData.status}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, status: value as "Paid" | "Pending" | "Overdue" }))
-              }
+              onValueChange={(value) => handleSelectChange('status', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Paid">Paid</SelectItem>
                 <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Paid">Paid</SelectItem>
                 <SelectItem value="Overdue">Overdue</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Invoice'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

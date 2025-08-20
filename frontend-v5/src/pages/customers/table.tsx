@@ -56,7 +56,6 @@ export const CustomerTable = ({
   setFilter,
   searchQuery,
   setSearchQuery,
-  refreshCustomers,
   isLoading,
   onDeleteClick,
   onViewDetails
@@ -110,7 +109,7 @@ export const CustomerTable = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <Tabs value={filter} onValueChange={setFilter}>
+        <Tabs value={filter} onValueChange={(value) => setFilter(value as 'All' | 'Active' | 'Dormant')}>
           <TabsList>
             <TabsTrigger value="All">All</TabsTrigger>
             <TabsTrigger value="Active">Active</TabsTrigger>
@@ -211,7 +210,7 @@ export const CustomerTable = ({
             <PaginationItem>
               <PaginationPrevious
                 onClick={() => prevPage && setCurrentPage(currentPage - 1)}
-                disabled={!prevPage}
+                className={!prevPage ? 'opacity-50 pointer-events-none' : ''}
               />
             </PaginationItem>
             {[...Array(Math.ceil(count / 10))].map((_, i) => (
@@ -227,7 +226,7 @@ export const CustomerTable = ({
             <PaginationItem>
               <PaginationNext
                 onClick={() => nextPage && setCurrentPage(currentPage + 1)}
-                disabled={!nextPage}
+                className={!nextPage ? 'opacity-50 pointer-events-none' : ''}
               />
             </PaginationItem>
           </PaginationContent>

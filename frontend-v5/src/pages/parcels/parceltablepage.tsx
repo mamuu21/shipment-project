@@ -1,21 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { useToast } from '@/hooks/use-toast';
 import api from '@/utils/api';
 import { ParcelTable } from './table';
+import type { Parcel } from './type'
 
-type Parcel = {
-  parcel_no: string;
-  shipment?: { shipment_no: string };
-  customer?: { name: string };
-  weight: number;
-  destination: string;
-  status: 'In-transit' | 'Delivered' | 'Pending' ;
-  created_at: string;
-  updated_at: string;
-};
+// type Parcel = {
+//   parcel_no: string;
+//   shipment?: { shipment_no: string; status: 'In-transit' | 'Delivered' };
+//   customer?: { name: string };
+//   weight: number;
+//   destination: string;
+//   status: 'In-transit' | 'Delivered' | 'Pending';
+//   created_at: string;
+//   updated_at: string;
+// };
+
 
 export const ParcelTablePage = ({
   customerId,
@@ -45,7 +46,7 @@ export const ParcelTablePage = ({
         if (shipmentId) url.searchParams.set('shipment', shipmentId);
 
         const res = await api.get(url.pathname + url.search, { headers });
-        const data = res.data;
+        const data = res.data as Parcel[] | { results: Parcel[] };
 
         setParcels(Array.isArray(data) ? data : data?.results || []);
       } catch (err: any) {
@@ -69,17 +70,22 @@ export const ParcelTablePage = ({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
-      <Tabs value={filter} onValueChange={(val) => setFilter(val as any)}>
-        <TabsList>
-        <TabsTrigger value="All">All</TabsTrigger>
-        <TabsTrigger value="In-transit">In-transit</TabsTrigger>
-        <TabsTrigger value="Delivered">Delivered</TabsTrigger>
-        <TabsTrigger value="Pending">Pending</TabsTrigger>
-        </TabsList>
-      </Tabs>
       <div className="border rounded-lg overflow-hidden mt-4">
         <ParcelTable
-          parcels={parcels}
+           parcels={parcels}
+          searchQuery=""               // dummy
+          onSearchChange={() => {}}     // dummy
+          onDeleteClick={() => {}}     // dummy
+          onExportCSV={() => {}}       // dummy
+          onCreateClick={() => {}}     // dummy
+          count={parcels.length}       // dummy
+          currentPage={1}              // dummy
+          totalPages={1}               // dummy
+          onPageChange={() => {}}      // dummy
+          prevPage={null}              // dummy
+          nextPage={null}              // dummy
+          filter={filter}
+          setFilter={setFilter}
           onView={(p) => console.log('view', p)}
           onEdit={(p) => console.log('edit', p)}
           onDelete={(p) => console.log('delete', p)}

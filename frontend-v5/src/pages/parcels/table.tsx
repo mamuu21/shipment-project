@@ -1,26 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { Pen, Trash2, Eye, Search, FileUp, MoreHorizontal } from 'lucide-react';
+import { useState } from 'react';
+import { Pen, Trash2, Eye, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
-interface Parcel {
-  parcel_no: string;
-  shipment_vessel: string;
-  customer_id: string;   
-  weight: number | '';  
-  weight_unit: 'kg' | 'lbs' | 'tons';
-  volume: number | '';
-  volume_unit: 'm³' | 'ft³';
-  charge: number | '';
-  payment: 'Paid' | 'Unpaid';
-  commodity_type: 'Box' | 'Parcel' | 'Envelope';
-  shipment_status: string;  
-  description: string;
-  customer?: { name?: string }; 
-}
+import type { Parcel } from './type'
+
 
 interface ParcelTableProps {
   parcels: Parcel[];
@@ -35,15 +24,18 @@ interface ParcelTableProps {
   onPageChange: (page: number) => void;
   prevPage: string | null;
   nextPage: string | null;
+  filter: 'All' | 'In-transit' | 'Delivered' | 'Pending';
+  setFilter: React.Dispatch<React.SetStateAction<'All' | 'In-transit' | 'Delivered' | 'Pending'>>;
+
+  onView?: (parcel: Parcel) => void;
+  onEdit?: (parcel: Parcel) => void;
+  onDelete?: (parcel: Parcel) => void;
 }
 
 export const ParcelTable = ({
   parcels,
   searchQuery,
-  onSearchChange,
   onDeleteClick,
-  onExportCSV,
-  onCreateClick,
   count,
   currentPage,
   totalPages,
@@ -55,6 +47,24 @@ export const ParcelTable = ({
   const startItem = (currentPage - 1) * 10 + 1;
   const endItem = Math.min(currentPage * 10, count);
 
+
+
+  const [filter, setFilter] = useState<'All' | 'In-transit' | 'Delivered'>('All');
+
+  const filteredData = parcels.filter(p => {
+    // Match tab filter
+    const matchesTab = filter === 'All' || p.shipment_status === filter;
+    
+    // Match search query
+    const matchesSearch = !searchQuery || [
+      p.parcel_no,
+      // p.shipment.shipment_no,
+      p.customer?.name,
+      p.commodity_type
+    ].some(field => (field || '').toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return matchesTab && matchesSearch;
+  });
 
 
   const getStatusBadge = (status: string) => {
@@ -71,15 +81,15 @@ export const ParcelTable = ({
 
   return (
   <div className="space-y-4">
-    {/* Search and Actions */}
-    <div className="flex justify-between items-center flex-wrap gap-4">
-      
-      
-      
-    </div>
-
     {/* Table */}
     <div className="border rounded-lg overflow-hidden">
+      <Tabs value={filter} onValueChange={(value: string) => setFilter(value as 'All' | 'In-transit' | 'Delivered')}>
+        <TabsList>
+          <TabsTrigger value="All">All</TabsTrigger>
+          <TabsTrigger value="Delivered">Delivered</TabsTrigger>
+          <TabsTrigger value="In-transit">In-transit</TabsTrigger>
+        </TabsList>
+      </Tabs>
       <Table>
         <TableHeader className="bg-gray-100">
           <TableRow>
@@ -89,7 +99,7 @@ export const ParcelTable = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {parcels.length > 0 ? parcels.map(p => (
+          {filteredData.length > 0 ? filteredData.map(p => (
             <TableRow key={p.parcel_no}>
               <TableCell>{p.parcel_no || '-'}</TableCell>
               <TableCell>{p.customer?.name || '-'}</TableCell>
@@ -100,7 +110,7 @@ export const ParcelTable = ({
               <TableCell>{p.payment || '-'}</TableCell>
               <TableCell>{p.commodity_type || '-'}</TableCell>
               <TableCell>
-                {getStatusBadge(p.shipment_status)}</TableCell>
+                {p.shipment_status && getStatusBadge(p.shipment_status)}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -150,7 +160,8 @@ export const ParcelTable = ({
           <PaginationItem>
             <PaginationPrevious 
               onClick={() => prevPage && onPageChange(currentPage - 1)} 
-              disabled={!prevPage} 
+              className={!prevPage ? 'opacity-50 pointer-events-none' : ''}
+
             />
           </PaginationItem>
           
@@ -167,7 +178,8 @@ export const ParcelTable = ({
           <PaginationItem>
             <PaginationNext
               onClick={() => nextPage && onPageChange(currentPage + 1)}
-              disabled={!nextPage}
+              className={!nextPage ? 'opacity-50 pointer-events-none' : ''}
+
             />
           </PaginationItem>
         </PaginationContent>

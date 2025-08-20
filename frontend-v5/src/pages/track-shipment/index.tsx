@@ -1,8 +1,8 @@
-import React, { useState, type FormEvent } from "react";
-import { Search, Package, Truck, Ship, Plane } from "lucide-react";
+import  { useState, type FormEvent } from "react";
+import { Package, Truck, Ship, Plane } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -106,7 +106,9 @@ export default function TrackShipment() {
       <h2 className="text-2xl font-bold mb-6">Track Shipment</h2>
 
       <div className="bg-white rounded-md shadow p-6 mb-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(value) => setActiveTab(value as "tracking" | "reference")}>
           <TabsList className="mb-4 border-b border-gray-200">
             <TabsTrigger value="tracking">Tracking Number</TabsTrigger>
             <TabsTrigger value="reference">Reference Number</TabsTrigger>
@@ -118,7 +120,7 @@ export default function TrackShipment() {
                 placeholder="Enter tracking number (e.g., SHP-001)"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                leftIcon={<Search size={16} />}
+                
                 className="flex-grow"
               />
               <Button type="submit" disabled={isSearching || !trackingNumber}>
@@ -136,7 +138,7 @@ export default function TrackShipment() {
                 placeholder="Enter reference number"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                leftIcon={<Search size={16} />}
+                
                 className="flex-grow"
               />
               <Button type="submit" disabled={isSearching || !trackingNumber}>

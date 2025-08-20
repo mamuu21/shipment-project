@@ -2,34 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter} from '@/components/ui/dialog';
+import type { Parcel } from './type'
 
-interface Parcel {
-  parcel_no: string;
-  shipment: string;
-  customer_id: string;   
-  weight: number | '';  
-  weight_unit: 'kg' | 'lbs' | 'tons';
-  volume: number | '';
-  volume_unit: 'm³' | 'ft³';
-  charge: number | '';
-  payment: 'Paid' | 'Unpaid';
-  commodity_type: 'Box' | 'Parcel' | 'Envelope';
-  description: string;
-}
 
 interface Shipment {
   shipment_no: string;
@@ -61,7 +37,7 @@ export const ParcelForm = ({
 }: ParcelFormProps) => {
   const [formData, setFormData] = useState<Parcel>(initialData || {
     parcel_no: '',
-    shipment: '',
+    shipment: { shipment_no: '', status: 'In-transit' },
     customer_id: '',
     weight: '',
     weight_unit: 'kg',
@@ -124,7 +100,7 @@ export const ParcelForm = ({
         <div>
           <label className="block text-sm font-medium mb-1">Shipment </label>
           <Select
-            value={formData.shipment}
+            value={formData.shipment?.shipment_no}
             onValueChange={(value) => handleSelectChange('shipment', value)}
             required
           >

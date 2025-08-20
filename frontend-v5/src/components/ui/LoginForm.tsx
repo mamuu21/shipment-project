@@ -49,7 +49,7 @@ export default function LoginForm() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const tokens: TokenResponse = await login(data.username, data.password); // should return tokens
+      const tokens: TokenResponse = await login(data.username, data.password) as TokenResponse; 
 
       if (data.remember) {
         // Persist tokens in localStorage
@@ -66,8 +66,10 @@ export default function LoginForm() {
 
       toast.success("Login successful!");
       navigate("/dashboard");
-    } catch (error: any) {
-      // error handling
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
+
     } finally {
       setIsLoading(false);
     }

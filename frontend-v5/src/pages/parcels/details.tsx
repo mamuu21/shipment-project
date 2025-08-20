@@ -6,9 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import api from '@/utils/api';
-import { getCurrentUser } from '@/utils/auth';
+// import { getCurrentUser } from '@/utils/auth';
 import BackArrow from '@/components/ui/backarrow';
 
 interface Parcel {
@@ -32,16 +32,16 @@ const ParcelDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [parcel, setParcel] = useState<Parcel | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const user = getCurrentUser();
-    setCurrentUser(user);
+    // const user = getCurrentUser();
+    // setCurrentUser(user);
 
     const fetchParcel = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await api.get(`/parcels/${id}/`, {
+        const res = await api.get<Parcel>(`/parcels/${id}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setParcel(res.data);
@@ -138,7 +138,7 @@ const ParcelDetails = () => {
                         </TableCell>
                         <TableCell className="py-3">
                             <span className="text-muted-foreground">Payment Status:</span>{' '}
-                            <Badge variant={parcel.payment === 'Paid' ? 'success' : 'destructive'}>
+                            <Badge variant={parcel.payment === 'Paid' ? 'secondary' : 'destructive'}>
                                 {parcel.payment}
                             </Badge>
                         </TableCell>

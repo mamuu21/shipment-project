@@ -13,13 +13,16 @@ interface DeleteDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   itemName: string;
+  isDeleting: boolean;
+
 }
 
 export const DeleteDialog = ({
   open,
   onOpenChange,
   onConfirm,
-  itemName
+  itemName,
+  isDeleting
 }: DeleteDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,9 +37,9 @@ export const DeleteDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            Delete
-          </Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={isDeleting}>
+            {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
