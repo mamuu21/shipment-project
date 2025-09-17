@@ -3,6 +3,7 @@ import { Routes, Route, } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
 import RegisterPage from './pages/register'
 import LoginPage from './pages/login'
+import Landing from './landing'
 
 import DashboardLayout from './pages/dashboard/dashlayout'
 import DashboardPage from './pages/dashboard/home'
@@ -26,8 +27,8 @@ function App() {
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/" element={<Landing />} />
       </Route>
 
       {/* Dashboard Routes */}
