@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import api from '@/utils/api';
-// import { getCurrentUser } from '@/utils/auth';
+import { getCurrentUser } from '@/utils/auth';
 import BackArrow from '@/components/ui/backarrow';
 
 import InvoiceTablePage from '../invoices/invoicetablepage';
@@ -30,16 +30,43 @@ const CustomerDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [currentUser, setCurrentUser] = useState<any>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
-    // const user = getCurrentUser();
-    // setCurrentUser(user);
+    const resolveCustomerId = async () => {
+      let resolvedId = id;
+
+      // If id is "me", get the customer ID from the JWT token
+      if (id === 'me') {
+        try {
+          const user = getCurrentUser();
+          if (user && user.customer_id) {
+            resolvedId = user.customer_id.toString();
+          } else {
+            console.error('Customer ID not found in token');
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to get customer ID from token:', error);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setCustomerId(resolvedId || null);
+    };
+
+    resolveCustomerId();
+  }, [id]);
+
+  useEffect(() => {
+    if (!customerId) return;
 
     const fetchCustomer = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await api.get(`/customers/${id}/`, {
+        const res = await api.get(`/customers/${customerId}/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCustomer(res.data as Customer);
@@ -51,9 +78,9 @@ const CustomerDetails = () => {
     };
 
     fetchCustomer();
-  }, [id]);
+  }, [customerId]);
 
-  if (!id) {
+  if (!customerId) {
     return <div className="container py-4">
       <p className="text-center text-destructive">Invalid customer ID.</p>
     </div>;
@@ -171,11 +198,11 @@ const CustomerDetails = () => {
         </TabsList>
 
         <TabsContent value="parcels" className="mt-4">
-          <ParcelTablePage customerId={id} />
+          {customerId && <ParcelTablePage customerId={customerId} />}
         </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
-          <InvoiceTablePage customerId={id} />
+          {customerId && <InvoiceTablePage customerId={customerId} />}
         </TabsContent>
         
         <TabsContent value="gps" className="mt-4">

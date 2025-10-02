@@ -4,6 +4,7 @@ import AuthLayout from './layouts/AuthLayout'
 import RegisterPage from './pages/register'
 import LoginPage from './pages/login'
 import Landing from './landing'
+import ProtectedRoute from './components/ProtectedRoute'
 
 import DashboardLayout from './pages/dashboard/dashlayout'
 import DashboardPage from './pages/dashboard/home'
@@ -19,6 +20,7 @@ import ShipmentDetails from './pages/shipments/details'
 import CustomerDetails from './pages/customers/details'
 import ParcelDetails from './pages/parcels/details'
 import InvoiceDetails from './pages/invoices/details'
+import Unauthorized from './pages/Unauthorized'
 
 function App() {
   return (
@@ -33,15 +35,29 @@ function App() {
 
       {/* Dashboard Routes */}
       <Route element={<DashboardLayout />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['admin', 'staff']}>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
         <Route path="/shipments" element={<ShipmentsPage />} />
-        <Route path="/customers" element={<CustomersPage/>} />
+        <Route path="/customers" element={
+          <ProtectedRoute allowedRoles={['admin', 'staff']}>
+            <CustomersPage/>
+          </ProtectedRoute>
+        } />
         <Route path="/parcels" element={<ParcelPage />} />
         <Route path="/invoices" element={<InvoicePage />} />
         <Route path="/track" element={<TrackShipment />} />
         <Route path="/quote" element={<ShippingQuote />} />
         <Route path="/warehouse" element={<WarehousePage />} />
 
+        {/* Customer-specific routes */}
+        <Route path="/customers/me" element={
+          <ProtectedRoute allowedRoles={['customer']}>
+            <CustomerDetails />
+          </ProtectedRoute>
+        } />
 
         {/* Details Routes */}
         <Route path="/shipments/:id" element={<ShipmentDetails />} />
@@ -50,6 +66,9 @@ function App() {
         <Route path="invoice/:id" element={<InvoiceDetails />} />
 
       </Route>
+
+      {/* Unauthorized Route */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* Add other route groups like dashboard here */}
     </Routes>

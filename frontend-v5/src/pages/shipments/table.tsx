@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Search, Download, Eye, Pen, Trash, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
 
 type Shipment = {
   shipment_no: string;
@@ -69,6 +70,7 @@ export const ShipmentTable = ({
 }: ShipmentTableProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { canEdit, canDelete } = useAuth();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -241,19 +243,23 @@ export const ShipmentTable = ({
                         <DropdownMenuItem onClick={() => navigate(`/shipments/${shipment.shipment_no}`)}>
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Pen className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-600"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteClick(shipment);
-                          }}
-                        >
-                          <Trash className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
+                        {canEdit && (
+                          <DropdownMenuItem>
+                            <Pen className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                        )}
+                        {canDelete && (
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteClick(shipment);
+                            }}
+                          >
+                            <Trash className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

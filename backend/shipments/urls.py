@@ -10,18 +10,22 @@ from .views import (
     ChartDataView,
     GenerateInvoicePDF,
     ShipmentCustomersView,
+    UserProfileView,
+    CustomerMeView,
 )
 
 
-urlpatterns = [  
+urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path('login/', TokenObtainPairView.as_view(), name='login' ),
-    
+    path('users/me/', UserProfileView.as_view(), name='user-profile'),
+
     path('shipments/', ShipmentListCreateView.as_view(), name='shipment-list-create'),
     path('shipments/<str:pk>/', ShipmentDetailView.as_view(), name='shipment-detail'),
     path('shipments/<str:pk>/customers/', ShipmentCustomersView.as_view(), name='shipment-customers'),
     
     path('customers/', CustomerListCreateView.as_view(), name='customer-list'),
+    path('customers/me/', CustomerMeView.as_view(), name='customer-me'),
     path('customers/<int:pk>/', CustomerDetailView.as_view(), name='customer-detail'),
     
     path('parcels/', ParcelListCreateView.as_view(), name='parcel-list-create'),

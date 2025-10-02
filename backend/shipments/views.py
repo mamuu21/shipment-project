@@ -16,7 +16,7 @@ from .models import Shipment, Customer, Parcel, Document, Invoice
 from .serializers import (
     ShipmentSerializer, CustomerSerializer, ParcelSerializer,
     DocumentSerializer, InvoiceSerializer, RegisterSerializer,
-    CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer, UserSerializer
 )
 from .permissions import RoleBasedAccessPermission, IsSelfOrAdmin
 from .filters import InvoiceFilter
@@ -106,6 +106,38 @@ class RegisterView(generics.CreateAPIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+# ==============================
+# User Profile View
+# ==============================
+class UserProfileView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+
+# ==============================
+# Customer Me View
+# ==============================
+class CustomerMeView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Find customer by matching email with logged-in user's email
+            customer = Customer.objects.get(email=request.user.email)
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        except Customer.DoesNotExist:
+            return Response(
+                {"detail": "Customer profile not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 class BaseUserView:

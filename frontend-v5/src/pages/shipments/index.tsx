@@ -6,6 +6,7 @@ import BackArrow from '@/components/ui/backarrow';
 import { ShipmentForm } from './form';
 import { ShipmentTable } from './table';
 import api from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
 
 type Shipment = {
   shipment_no: string;
@@ -34,6 +35,7 @@ interface ShipmentResponse {
 
 export const ShipmentPage = () => {
   const navigate = useNavigate();
+  const { canCreate } = useAuth();
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,9 +79,11 @@ export const ShipmentPage = () => {
           <BackArrow onClick={() => navigate(-1)} />
           <h2 className="text-xl font-semibold">All Shipments</h2>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="mr-2 h-4 w-4" /> New Shipment
-        </Button>
+        {canCreate && (
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="mr-2 h-4 w-4" /> New Shipment
+          </Button>
+        )}
       </div>
 
       <ShipmentTable

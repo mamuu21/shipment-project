@@ -16,9 +16,13 @@ from datetime import timedelta
 
 import os
 
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+load_dotenv(BASE_DIR / ".env") 
 
 
 # Quick-start development settings - unsuitable for production
@@ -98,12 +102,12 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "amka_shipment",
-        'USER': 'postgres',  # PostgreSQL user
-        'PASSWORD': '2204',
-        'HOST': 'localhost',  # If using local PostgreSQL
-        'PORT': '5432',  # Default PostgreSQL port
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "3306"),
     }
 }
 

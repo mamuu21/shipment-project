@@ -12,12 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth, type UserRole } from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { login } from "@/utils/auth";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import api from "@/utils/api";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -33,8 +35,18 @@ type TokenResponse = {
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+interface LoginError {
+  response?: {
+    data?: {
+      detail?: string;
+    };
+  };
+  message?: string;
+}
+
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { updateRole } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<LoginFormValues>({
@@ -46,30 +58,85 @@ export default function LoginForm() {
     },
   });
 
+  // Function to fetch user details and extract role
+  const fetchUserDetails = async (accessToken: string): Promise<UserRole> => {
+    try {
+      const response = await api.get('/users/me/', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      const userData = response.data;
+      console.log('User details from /api/users/me/:', userData);
+
+      const userRole = userData.role;
+      if (userRole === 'admin' || userRole === 'staff' || userRole === 'customer') {
+        return userRole;
+      } else {
+        throw new Error(`Invalid role received: ${userRole}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
+      throw new Error('Failed to retrieve user role from server');
+    }
+  };
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const tokens: TokenResponse = await login(data.username, data.password) as TokenResponse; 
+      // Step 1: Login and get tokens
+      const response = await login(data.username, data.password);
+      const tokens = response as TokenResponse;
 
+      console.log('Login response:', tokens);
+
+      // Step 2: Store tokens
       if (data.remember) {
-        // Persist tokens in localStorage
         localStorage.setItem('access_token', tokens.access);
-        localStorage.setItem('refresh_token', tokens.refresh);
+        if (tokens.refresh) {
+          localStorage.setItem('refresh_token', tokens.refresh);
+        }
       } else {
-        // Store tokens in sessionStorage (cleared when browser closes)
         sessionStorage.setItem('access_token', tokens.access);
-        sessionStorage.setItem('refresh_token', tokens.refresh);
-        // Clean localStorage just in case
+        if (tokens.refresh) {
+          sessionStorage.setItem('refresh_token', tokens.refresh);
+        }
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
       }
 
-      toast.success("Login successful!");
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Login failed. Please try again.");
+      // Step 3: Fetch user details to get role
+      const userRole = await fetchUserDetails(tokens.access);
 
+      // Step 4: Store role in localStorage and update context
+      localStorage.setItem('role', userRole);
+      updateRole(userRole);
+      console.log('Role stored and updated:', userRole);
+
+      // Step 5: Show success message
+      toast.success("Login successful!");
+
+      // Step 6: Role-based redirect
+      setTimeout(() => {
+        if (userRole === 'customer') {
+          console.log('Redirecting customer to /customers/me');
+          navigate('/customers/me');
+        } else {
+          console.log('Redirecting admin/staff to /dashboard');
+          navigate('/dashboard');
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error("Login process failed:", error);
+      const loginError = error as LoginError;
+      let errorMessage = "Login failed. Please try again.";
+
+      if (loginError?.response?.data?.detail) {
+        errorMessage = loginError.response.data.detail;
+      } else if ((error as Error)?.message) {
+        errorMessage = (error as Error).message;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -75,7 +75,10 @@ export async function refreshToken(): Promise<string> {
 }
 
 export function getCurrentUser(): any | null {
-  const token = localStorage.getItem('access_token');
+  let token = localStorage.getItem('access_token');
+  if (!token) {
+    token = sessionStorage.getItem('access_token');
+  }
   if (!token) return null;
 
   try {
@@ -102,11 +105,104 @@ export function logout(): void {
 }
 
 export function isTokenExpired(): boolean {
-  const user = getCurrentUser();
-  if (!user) return true;
-  return Date.now() >= user.exp * 1000;
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  if (!token) return true;
+
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    const user = JSON.parse(jsonPayload);
+    return Date.now() >= user.exp * 1000;
+  } catch (error) {
+    console.error('Failed to decode token', error);
+    return true;
+  }
 }
 
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('access_token') && !isTokenExpired();
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  return !!token && !isTokenExpired();
+}
+
+// Permission functions based on backend roles
+export function getUserRole(): string | null {
+  const user = getCurrentUser();
+  return user?.role || null;
+}
+
+export function isAdmin(): boolean {
+  return getUserRole() === 'admin';
+}
+
+export function isStaff(): boolean {
+  return getUserRole() === 'staff';
+}
+
+export function isCustomer(): boolean {
+  return getUserRole() === 'customer';
+}
+
+export function isAdminOrStaff(): boolean {
+  const role = getUserRole();
+  return role === 'admin' || role === 'staff';
+}
+
+export function isAdminOrStaffOrCustomer(): boolean {
+  const role = getUserRole();
+  return role === 'admin' || role === 'staff' || role === 'customer';
+}
+
+// CRUD permission checks based on backend RoleBasedAccessPermission
+export function canCreate(): boolean {
+  if (!isAuthenticated()) return false;
+  const role = getUserRole();
+  return role === 'admin' || role === 'staff';
+}
+
+export function canRead(): boolean {
+  return isAuthenticated();
+}
+
+export function canUpdate(): boolean {
+  if (!isAuthenticated()) return false;
+  const role = getUserRole();
+  return role === 'admin' || role === 'staff' || role === 'customer';
+}
+
+export function canDelete(): boolean {
+  if (!isAuthenticated()) return false;
+  const role = getUserRole();
+  return role === 'admin'; // Only admin can delete
+}
+
+// Specific permission checks for different resources
+export function canManageShipments(): boolean {
+  return isAdminOrStaff();
+}
+
+export function canManageCustomers(): boolean {
+  return isAdminOrStaff();
+}
+
+export function canManageParcels(): boolean {
+  return isAdminOrStaff();
+}
+
+export function canManageInvoices(): boolean {
+  return isAdminOrStaff();
+}
+
+export function canViewAllData(): boolean {
+  return isAdminOrStaff();
+}
+
+export function canViewOwnData(): boolean {
+  return isAuthenticated();
 }
