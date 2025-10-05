@@ -77,7 +77,7 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
       const token = localStorage.getItem("access_token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const url = new URL('/customers/', 'http://127.0.0.1:8000/api');
+      const url = new URL('/customers/', 'http://127.0.0.1:8000');
       url.searchParams.set('page', currentPage.toString());
 
       if (shipmentId) url.searchParams.set('parcels__shipment__shipment_no', shipmentId);

@@ -44,6 +44,13 @@ interface LoginError {
   message?: string;
 }
 
+type APIUser = {
+  username?: string;
+  email?: string;
+  role?: string | null;
+  // add any other fields you expect here
+};
+
 export default function LoginForm() {
   const navigate = useNavigate();
   const { updateRole } = useAuth();
@@ -61,14 +68,15 @@ export default function LoginForm() {
   // Function to fetch user details and extract role
   const fetchUserDetails = async (accessToken: string): Promise<UserRole> => {
     try {
-      const response = await api.get('/users/me/', {
+      const response = await api.get<APIUser>('/users/me/', {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
 
       const userData = response.data;
-      console.log('User details from /api/users/me/:', userData);
+      console.log('User details from /users/me/:', userData);
 
       const userRole = userData.role;
+
       if (userRole === 'admin' || userRole === 'staff' || userRole === 'customer') {
         return userRole;
       } else {
@@ -108,7 +116,7 @@ export default function LoginForm() {
       const userRole = await fetchUserDetails(tokens.access);
 
       // Step 4: Store role in localStorage and update context
-      localStorage.setItem('role', userRole);
+      localStorage.setItem('role', userRole as string);
       updateRole(userRole);
       console.log('Role stored and updated:', userRole);
 

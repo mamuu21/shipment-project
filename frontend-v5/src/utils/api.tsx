@@ -1,8 +1,21 @@
 import axios from 'axios';
-import { refreshToken } from './auth'; 
+import { refreshToken } from './auth';
+
+
+let baseURL = import.meta.env.VITE_API_URL;
+
+if (!baseURL) {
+  // If you're running the frontend from localhost, use local backend
+  if (window && window.location && window.location.hostname === 'localhost') {
+    baseURL = 'http://127.0.0.1:8000/';
+  } else {
+    // final fallback to production URL (safe)
+    baseURL = 'https://amkatech.co.tz/';
+  }
+}
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },

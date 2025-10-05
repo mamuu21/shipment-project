@@ -46,7 +46,7 @@ export const ShipmentPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   
-  const baseUrl = "http://127.0.0.1:8000/api/shipments/";
+  const baseUrl = "http://127.0.0.1:8000/shipments/";
 
   const refreshShipments = async () => {
     setIsLoading(true);

@@ -1,5 +1,6 @@
 // utils/auth.ts
-import axios from 'axios';
+
+import api from './api';
 
 interface TokenResponse {
   access: string;
@@ -23,8 +24,8 @@ interface LoginResponse {
 }
 
 export async function register(data: RegisterPayload): Promise<{ user: { username: string } }> {
-  const response = await axios.post<LoginResponse>(
-    'http://127.0.0.1:8000/api/register/',
+  const response = await api.post<LoginResponse>(
+    'http://127.0.0.1:8000/register/',
     data,
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -36,8 +37,8 @@ export async function register(data: RegisterPayload): Promise<{ user: { usernam
 }
 
 export async function login(username: string, password: string): Promise<TokenResponse> {
-  const response = await axios.post<TokenResponse>(
-    'http://127.0.0.1:8000/api/token/',
+  const response = await api.post<TokenResponse>(
+    'http://127.0.0.1:8000/token/',
     { username, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -55,8 +56,8 @@ export async function refreshToken(): Promise<string> {
   if (!refresh) throw new Error('No refresh token found');
 
   try {
-    const response = await axios.post<TokenResponse>(
-      'http://127.0.0.1:8000/api/token/refresh/',
+    const response = await api.post<TokenResponse>(
+      'http://127.0.0.1:8000/token/refresh/',
       { refresh },
       { headers: { 'Content-Type': 'application/json' } }
     );

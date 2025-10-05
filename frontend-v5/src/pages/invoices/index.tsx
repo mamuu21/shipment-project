@@ -79,7 +79,7 @@ const InvoicePage = ({customerId}: InvoicePageProps) => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         // Build URL with query parameters
-        const url = new URL('/invoices/', 'http://127.0.0.1:8000/api');
+        const url = new URL('/invoices/', 'http://127.0.0.1:8000');
         url.searchParams.set('page', currentPage.toString());
         
         // Add customer filter if customerId is provided
