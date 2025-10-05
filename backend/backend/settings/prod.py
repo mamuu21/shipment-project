@@ -28,6 +28,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.amkatech.co.tz",
 ]
 
+CORS_ALLOW_HEADERS = list(default_headers) + ["authorization"]
+CORS_ALLOW_CREDENTIALS = True 
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'

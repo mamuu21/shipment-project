@@ -25,7 +25,7 @@ interface LoginResponse {
 
 export async function register(data: RegisterPayload): Promise<{ user: { username: string } }> {
   const response = await api.post<LoginResponse>(
-    'http://127.0.0.1:8000/register/',
+    '/register/',
     data,
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -38,7 +38,7 @@ export async function register(data: RegisterPayload): Promise<{ user: { usernam
 
 export async function login(username: string, password: string): Promise<TokenResponse> {
   const response = await api.post<TokenResponse>(
-    'http://127.0.0.1:8000/token/',
+    '/token/',
     { username, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -57,7 +57,7 @@ export async function refreshToken(): Promise<string> {
 
   try {
     const response = await api.post<TokenResponse>(
-      'http://127.0.0.1:8000/token/refresh/',
+      '/token/refresh/',
       { refresh },
       { headers: { 'Content-Type': 'application/json' } }
     );
