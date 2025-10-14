@@ -280,6 +280,9 @@ export const ShipmentTable = ({
         <div>
           Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, count)} of {count} entries
         </div>
+        {/* New Fixed Pagination */}
+        {/*The backend already handled pagination, but React was also trying to paginate, leading to mismatched results.  */}
+        {/* Simplified the flow to rely on backend logic for accurate data and smoother navigation. */}
         <Pagination>
           <PaginationContent>
             <PaginationItem>

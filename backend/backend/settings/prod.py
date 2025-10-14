@@ -28,10 +28,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.amkatech.co.tz",
 ]
 
-CORS_ALLOW_HEADERS = list(default_headers) + ["authorization"]
-CORS_ALLOW_CREDENTIALS = True 
 
-STATIC_URL = '/static/'
+STATIC_URL = '/assets/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
@@ -39,5 +37,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-TEMPLATES[0]['DIRS'] = [ str(BASE_DIR / 'frontend_build') ]
-STATICFILES_DIRS = [ BASE_DIR / 'frontend_build/static' ]
+TEMPLATES[0]['DIRS'] = [ str(BASE_DIR / 'dist') ]
+STATICFILES_DIRS = [ BASE_DIR / 'dist/assets' ]
