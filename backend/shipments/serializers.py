@@ -64,6 +64,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role']
         read_only_fields = ['id']
         
+        def get_customer(self, obj):
+            if obj.role != "customer":
+                return None
+            try:
+                return CustomerSerializer(obj.customer).data
+            except Customer.DoesNotExist:
+                return None
+        
 
 class CustomerSerializer(serializers.ModelSerializer):
     total_invoices_paid = serializers.SerializerMethodField()
@@ -105,7 +113,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 class ShipmentSerializer(serializers.ModelSerializer):
     customer_count = serializers.SerializerMethodField()
-    parcel_count = serializers.SerializerMethodField
+    parcel_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Shipment
@@ -131,6 +139,8 @@ class ParcelSerializer(serializers.ModelSerializer):
     shipment_status = serializers.CharField(source='shipment.status', read_only=True)
     
     
+            
+    
     class Meta:
         model = Parcel
         fields = [
@@ -138,7 +148,7 @@ class ParcelSerializer(serializers.ModelSerializer):
             'volume', 'volume_unit', 'charge', 'payment','commodity_type', 'description', 
             'shipment_vessel', 'customer_name', 'shipment_status'
         ]
-        
+      
         def to_representation(self, instance):
             """
             Ensure the parcel's status matches the shipment's status in API responses.
@@ -146,7 +156,7 @@ class ParcelSerializer(serializers.ModelSerializer):
             representation = super().to_representation(instance)
             representation['status'] = instance.shipment.status
             return representation
-            
+        
         
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:

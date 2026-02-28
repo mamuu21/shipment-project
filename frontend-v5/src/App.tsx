@@ -15,6 +15,7 @@ import InvoicePage from './pages/invoices/index'
 import TrackShipment from './pages/track-shipment/index'
 import ShippingQuote from './pages/get-quote/index'
 import WarehousePage from './pages/warehouse'
+import Profile from './pages/profile'
 
 import ShipmentDetails from './pages/shipments/details'
 import CustomerDetails from './pages/customers/details'
@@ -51,13 +52,14 @@ function App() {
         <Route path="/track" element={<TrackShipment />} />
         <Route path="/quote" element={<ShippingQuote />} />
         <Route path="/warehouse" element={<WarehousePage />} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* Customer-specific routes */}
-        <Route path="/customers/me" element={
+        {/* <Route path="/customers/me" element={
           <ProtectedRoute allowedRoles={['customer']}>
             <CustomerDetails />
           </ProtectedRoute>
-        } />
+        } /> */}
 
         {/* Details Routes */}
         <Route path="/shipments/:id" element={<ShipmentDetails />} />

@@ -1,5 +1,5 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     ShipmentListCreateView, ShipmentDetailView,
     CustomerListCreateView, CustomerDetailView,
@@ -11,13 +11,14 @@ from .views import (
     GenerateInvoicePDF,
     ShipmentCustomersView,
     UserProfileView,
-    CustomerMeView,
 )
 
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
-    path('login/', TokenObtainPairView.as_view(), name='login' ),
+    path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+  
     path('users/me/', UserProfileView.as_view(), name='user-profile'),
 
     path('shipments/', ShipmentListCreateView.as_view(), name='shipment-list-create'),
@@ -25,7 +26,6 @@ urlpatterns = [
     path('shipments/<str:pk>/customers/', ShipmentCustomersView.as_view(), name='shipment-customers'),
     
     path('customers/', CustomerListCreateView.as_view(), name='customer-list'),
-    path('customers/me/', CustomerMeView.as_view(), name='customer-me'),
     path('customers/<int:pk>/', CustomerDetailView.as_view(), name='customer-detail'),
     
     path('parcels/', ParcelListCreateView.as_view(), name='parcel-list-create'),

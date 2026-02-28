@@ -12,7 +12,8 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [
     "amkatech.co.tz",
     "www.amkatech.co.tz",
-    "api.amkatech.co.tz",  # if you create a subdomain for the backend
+    "api.amkatech.co.tz",
+    "cargopro.amkatech.co.tz",
 ]
 
 # These must include full https:// URLs
@@ -20,17 +21,21 @@ CSRF_TRUSTED_ORIGINS = [
     "https://amkatech.co.tz",
     "https://www.amkatech.co.tz",
     "https://api.amkatech.co.tz",
+    "https://cargopro.amkatech.co.tz",
 ]
 
-# CORS settings if React frontend and Django backend are on separate domains
+# CORS settings
 CORS_ALLOWED_ORIGINS = [
     "https://amkatech.co.tz",
     "https://www.amkatech.co.tz",
+    "https://cargopro.amkatech.co.tz",
 ]
 
-
-STATIC_URL = '/assets/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Security Settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -38,4 +43,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 TEMPLATES[0]['DIRS'] = [ str(BASE_DIR / 'dist') ]
-STATICFILES_DIRS = [ BASE_DIR / 'dist/assets' ]
+
+# Include 'dist' so that files like vite.svg in the root of dist are found
+STATICFILES_DIRS = [ 
+    BASE_DIR / 'dist',
+    BASE_DIR / 'dist/assets' 
+]

@@ -126,8 +126,8 @@ export default function LoginForm() {
       // Step 6: Role-based redirect
       setTimeout(() => {
         if (userRole === 'customer') {
-          console.log('Redirecting customer to /customers/me');
-          navigate('/customers/me');
+          console.log('Redirecting customer to /profile');
+          navigate('/profile');
         } else {
           console.log('Redirecting admin/staff to /dashboard');
           navigate('/dashboard');

@@ -1,5 +1,6 @@
 // utils/auth.ts
 
+import { useNavigate } from 'react-router-dom';
 import api from './api';
 
 interface TokenResponse {
@@ -38,7 +39,7 @@ export async function register(data: RegisterPayload): Promise<{ user: { usernam
 
 export async function login(username: string, password: string): Promise<TokenResponse> {
   const response = await api.post<TokenResponse>(
-    '/token/',
+    '/auth/login/',
     { username, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
@@ -57,7 +58,7 @@ export async function refreshToken(): Promise<string> {
 
   try {
     const response = await api.post<TokenResponse>(
-      '/token/refresh/',
+      '/auth/refresh/',
       { refresh },
       { headers: { 'Content-Type': 'application/json' } }
     );
@@ -99,10 +100,14 @@ export function getCurrentUser(): any | null {
   }
 }
 
-export function logout(): void {
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  window.location.href = '/login';
+export function useLogout() {
+  const navigate = useNavigate();
+
+  return () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    navigate('/login', { replace: true });
+  };
 }
 
 export function isTokenExpired(): boolean {

@@ -62,7 +62,7 @@ class RoleBasedQuerysetMixin:
 
         # Customers see only their own data
         if user.role == 'customer':
-            filter_kwargs = {self.customer_field: user.email}
+            filter_kwargs = {self.customer_field: user}
             return qs.filter(**filter_kwargs)
 
         return self.model.objects.none()
@@ -121,24 +121,6 @@ class UserProfileView(APIView):
 
 
 # ==============================
-# Customer Me View
-# ==============================
-class CustomerMeView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        try:
-            # Find customer by matching email with logged-in user's email
-            customer = Customer.objects.get(email=request.user.email)
-            serializer = CustomerSerializer(customer)
-            return Response(serializer.data)
-        except Customer.DoesNotExist:
-            return Response(
-                {"detail": "Customer profile not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
 
 class BaseUserView:
     authentication_classes = [JWTAuthentication]

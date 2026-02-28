@@ -1,8 +1,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { logout } from "@/utils/auth"
+import { useLogout } from "@/utils/auth"
+
 
 export default function Navbar() {
+  const logout = useLogout();
+
   return (
     <header className="w-full h-16 px-6 border-b flex items-center justify-between bg-white shadow-sm">
       <h1 className="text-xl font-semibold"></h1>
