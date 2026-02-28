@@ -6,6 +6,7 @@ import BackArrow from '@/components/ui/backarrow';
 import { CustomerTable } from './table';
 import { CustomerForm } from './form';
 import { DeleteDialog } from './delete';
+import { CustomerDetailDrawer } from './drawer';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -68,23 +69,24 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Drawer state
+  const [drawerCustomerId, setDrawerCustomerId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+
   // Main data fetching function
   const fetchCustomers = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("access_token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const params = new URLSearchParams();
+      params.set('page', currentPage.toString());
+      if (shipmentId) params.set('parcels__shipment__shipment_no', shipmentId);
+      if (filter !== 'All') params.set('status', filter);
+      if (searchQuery) params.set('search', searchQuery);
 
-      const url = new URL('/customers/', 'http://127.0.0.1:8000');
-      url.searchParams.set('page', currentPage.toString());
-
-      if (shipmentId) url.searchParams.set('parcels__shipment__shipment_no', shipmentId);
-      if (filter !== 'All') url.searchParams.set('status', filter);
-      if (searchQuery) url.searchParams.set('search', searchQuery);
-
-      const response = await api.get<PaginatedResponse<Customer>>(url.pathname + url.search, { headers });
+      const response = await api.get<PaginatedResponse<Customer>>(`/customers/?${params.toString()}`);
       const data = response.data;
 
       setCustomers(Array.isArray(data) ? data : data?.results || []);
@@ -237,7 +239,23 @@ export const CustomersPage = ({ shipmentId }: CustomersPageProps) => {
           setSelectedCustomer(customer);
           setShowDeleteModal(true);
         }}
-        onViewDetails={(customerId) => navigate(`/customers/${customerId}`)}
+        onViewDetails={(customerId) => {
+          setDrawerCustomerId(customerId);
+          setDrawerOpen(true);
+        }}
+      />
+
+      <CustomerDetailDrawer
+        customerId={drawerCustomerId}
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setDrawerCustomerId(null);
+        }}
+        onEdit={(customer) => {
+          setEditCustomer(customer);
+          setDrawerOpen(false);
+        }}
       />
 
       <CustomerForm

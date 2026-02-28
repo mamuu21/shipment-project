@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "shipments.apps.ShipmentsConfig",
+    "accounts.apps.AccountsConfig",
     "djmoney",
     "rest_framework",
     "django_filters",

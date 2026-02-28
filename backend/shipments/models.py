@@ -87,7 +87,10 @@ class Shipment(models.Model):
     destination = models.CharField(max_length=250)
     steps = models.PositiveBigIntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
-    
+
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     def customers(self):
         # Get all customers who have parcels in this shipment
         return Customer.objects.filter(parcels__shipment=self).distinct()
@@ -286,3 +289,46 @@ class InvoiceItem(models.Model):
 
     class Meta:
         unique_together = ('invoice', 'parcel')
+
+
+class Parameter(models.Model):
+    CATEGORY_CHOICES = [
+        ("vessel", "Vessels & Shipping Lines"),
+        ("parcel_status", "Parcel Status"),
+        ("transport", "Means of Transport"),
+        ("commodity", "Commodity Types"),
+        ("payment", "Payment Methods"),
+    ]
+
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, db_index=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, blank=True, default="")
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["category", "sort_order", "name"]
+        unique_together = [("category", "name")]
+
+    def __str__(self):
+        return f"{self.get_category_display()}: {self.name}"
+
+
+class Step(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    color = models.CharField(max_length=7, default="#2563eb")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name

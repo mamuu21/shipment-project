@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum
-from .models import Shipment, Customer, Parcel, Document, Invoice, User, InvoiceItem
+from .models import Shipment, Customer, Parcel, Document, Invoice, User, InvoiceItem, Step, Parameter
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -119,6 +119,7 @@ class ShipmentSerializer(serializers.ModelSerializer):
         model = Shipment
         fields = ['shipment_no', 'transport', 'vessel', 'origin', 'destination',
             'weight', 'weight_unit', 'volume', 'volume_unit', 'steps', 'status',
+            'latitude', 'longitude',
             'customer_count', 'parcel_count']
         
     def get_customer_count(self, obj):
@@ -209,3 +210,21 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def get_final_amount(self, obj):
         return str(obj.final_amount.amount) if obj.final_amount else Decimal('0.00')
+
+
+class StepSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Step
+        fields = ["id", "name", "description", "order", "color", "is_active", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class ParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parameter
+        fields = [
+            "id", "category", "name", "description", "color",
+            "is_default", "is_active", "sort_order",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

@@ -1,10 +1,7 @@
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import { Pen, Trash2, Eye, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
@@ -24,9 +21,7 @@ interface ParcelTableProps {
   onPageChange: (page: number) => void;
   prevPage: string | null;
   nextPage: string | null;
-  filter: 'All' | 'In-transit' | 'Delivered' | 'Pending';
-  setFilter: React.Dispatch<React.SetStateAction<'All' | 'In-transit' | 'Delivered' | 'Pending'>>;
-
+  onViewParcel?: (parcelNo: string) => void;
   onView?: (parcel: Parcel) => void;
   onEdit?: (parcel: Parcel) => void;
   onDelete?: (parcel: Parcel) => void;
@@ -41,66 +36,38 @@ export const ParcelTable = ({
   totalPages,
   onPageChange,
   prevPage,
-  nextPage
+  nextPage,
+  onViewParcel
 }: ParcelTableProps) => {
-  const navigate = useNavigate();
   const startItem = (currentPage - 1) * 10 + 1;
   const endItem = Math.min(currentPage * 10, count);
 
-
-
-  const [filter, setFilter] = useState<'All' | 'In-transit' | 'Delivered'>('All');
-
   const filteredData = parcels.filter(p => {
-    // Match tab filter
-    const matchesTab = filter === 'All' || p.shipment_status === filter;
-    
-    // Match search query
-    const matchesSearch = !searchQuery || [
+    return !searchQuery || [
       p.parcel_no,
-      // p.shipment.shipment_no,
       p.customer?.name,
       p.commodity_type
     ].some(field => (field || '').toLowerCase().includes(searchQuery.toLowerCase()));
-
-    return matchesTab && matchesSearch;
   });
-
-
-  const getStatusBadge = (status: string) => {
-    const base = 'inline-block px-2 py-1 text-xs font-medium rounded-full';
-    switch (status) {
-      case 'Delivered':
-        return <span className={`${base} bg-green-100 text-green-800`}>{status}</span>;
-      case 'In-transit':
-        return <span className={`${base} bg-yellow-100 text-yellow-800`}>{status}</span>;
-      default:
-        return <span className={`${base} bg-gray-100 text-gray-800`}>{status}</span>;
-    }
-  };
 
   return (
   <div className="space-y-4">
-    {/* Table */}
     <div className="border rounded-lg overflow-hidden">
-      <Tabs value={filter} onValueChange={(value: string) => setFilter(value as 'All' | 'In-transit' | 'Delivered')}>
-        <TabsList>
-          <TabsTrigger value="All">All</TabsTrigger>
-          <TabsTrigger value="Delivered">Delivered</TabsTrigger>
-          <TabsTrigger value="In-transit">In-transit</TabsTrigger>
-        </TabsList>
-      </Tabs>
       <Table>
         <TableHeader className="bg-gray-100">
           <TableRow>
-            {['Parcel No', 'Customer', 'Shipment', 'Weight', 'Volume', 'Charge', 'Payment', 'Commodity Type', 'Status','Actions'].map((header) => (
+            {['Parcel No', 'Customer', 'Shipment', 'Weight', 'Volume', 'Charge', 'Payment', 'Commodity Type', 'Actions'].map((header) => (
               <TableHead key={header}>{header}</TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredData.length > 0 ? filteredData.map(p => (
-            <TableRow key={p.parcel_no}>
+            <TableRow
+              key={p.parcel_no}
+              onClick={() => onViewParcel?.(p.parcel_no)}
+              className="cursor-pointer hover:bg-muted/50"
+            >
               <TableCell>{p.parcel_no || '-'}</TableCell>
               <TableCell>{p.customer?.name || '-'}</TableCell>
               <TableCell>{p.shipment_vessel || '-'}</TableCell>
@@ -109,9 +76,7 @@ export const ParcelTable = ({
               <TableCell>{p.charge || '-'}</TableCell>
               <TableCell>{p.payment || '-'}</TableCell>
               <TableCell>{p.commodity_type || '-'}</TableCell>
-              <TableCell>
-                {p.shipment_status && getStatusBadge(p.shipment_status)}</TableCell>
-              <TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -119,7 +84,7 @@ export const ParcelTable = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate(`/parcels/${p.parcel_no}`)}>
+                    <DropdownMenuItem onClick={() => onViewParcel?.(p.parcel_no)}>
                       <Eye className="mr-2 h-4 w-4" /> View Details
                     </DropdownMenuItem>
                     <DropdownMenuItem>
@@ -141,7 +106,7 @@ export const ParcelTable = ({
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-4 text-gray-500">
+              <TableCell colSpan={8} className="text-center py-4 text-gray-500">
                 {searchQuery ? 'No matching parcels' : 'No parcels available'}
               </TableCell>
             </TableRow>

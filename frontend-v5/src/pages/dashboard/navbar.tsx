@@ -1,10 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useLogout } from "@/utils/auth"
+import { useNavigate } from "react-router-dom"
 
 
 export default function Navbar() {
   const logout = useLogout();
+  const navigate = useNavigate();
 
   return (
     <header className="w-full h-16 px-6 border-b flex items-center justify-between bg-white shadow-sm">
@@ -18,8 +20,8 @@ export default function Navbar() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
           <DropdownMenuItem onClick={logout} className="text-red-600">Logout</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

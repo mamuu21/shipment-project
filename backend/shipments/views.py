@@ -12,11 +12,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Shipment, Customer, Parcel, Document, Invoice
+from .models import Shipment, Customer, Parcel, Document, Invoice, Step, Parameter
 from .serializers import (
     ShipmentSerializer, CustomerSerializer, ParcelSerializer,
     DocumentSerializer, InvoiceSerializer, RegisterSerializer,
-    CustomTokenObtainPairSerializer, UserSerializer
+    CustomTokenObtainPairSerializer, UserSerializer,
+    StepSerializer, ParameterSerializer,
 )
 from .permissions import RoleBasedAccessPermission, IsSelfOrAdmin
 from .filters import InvoiceFilter
@@ -134,7 +135,7 @@ class ShipmentListCreateView(BaseUserView, RoleBasedQuerysetMixin, generics.List
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['shipment_no', 'transport', 'origin', 'destination', 'status']
     model = Shipment
-    customer_field = 'customers__email'
+    customer_field = 'parcels__customer__email'
     permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
@@ -142,7 +143,7 @@ class ShipmentDetailView(StaffDeleteProtectedMixin, BaseUserView, RoleBasedQuery
     serializer_class = ShipmentSerializer
     model = Shipment
     lookup_field = 'pk'
-    customer_field = 'customers__email'
+    customer_field = 'parcels__customer__email'
     permission_classes = [IsAuthenticated, RoleBasedAccessPermission]
 
 
@@ -310,3 +311,50 @@ class GenerateInvoicePDF(APIView):
 
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename=f'invoice_{customer.name}.pdf')
+
+
+# ==============================
+# Step Views
+# ==============================
+class StepListCreateView(BaseUserView, generics.ListCreateAPIView):
+    serializer_class = StepSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["is_active"]
+
+    def get_queryset(self):
+        return Step.objects.all()
+
+
+class StepDetailView(BaseUserView, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StepSerializer
+    queryset = Step.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+class ActiveStepListView(BaseUserView, generics.ListAPIView):
+    serializer_class = StepSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return Step.objects.filter(is_active=True)
+
+
+# ==============================
+# Parameter Views
+# ==============================
+class ParameterListCreateView(BaseUserView, generics.ListCreateAPIView):
+    serializer_class = ParameterSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["category", "is_active", "is_default"]
+
+    def get_queryset(self):
+        return Parameter.objects.all()
+
+
+class ParameterDetailView(BaseUserView, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ParameterSerializer
+    queryset = Parameter.objects.all()
+    permission_classes = [IsAuthenticated]

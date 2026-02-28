@@ -16,6 +16,7 @@ import TrackShipment from './pages/track-shipment/index'
 import ShippingQuote from './pages/get-quote/index'
 import WarehousePage from './pages/warehouse'
 import Profile from './pages/profile'
+import SettingsPage from './pages/settings'
 
 import ShipmentDetails from './pages/shipments/details'
 import CustomerDetails from './pages/customers/details'
@@ -31,7 +32,7 @@ function App() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<LoginPage />} />
       </Route>
 
       {/* Dashboard Routes */}
@@ -67,6 +68,11 @@ function App() {
         <Route path="/parcels/:id" element={<ParcelDetails />} />
         <Route path="invoice/:id" element={<InvoiceDetails />} />
 
+        <Route path="/settings" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
       {/* Unauthorized Route */}

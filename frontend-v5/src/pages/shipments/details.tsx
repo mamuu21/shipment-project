@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import api from '@/utils/api';
 // import { getCurrentUser } from '@/utils/auth';
 import BackArrow from '@/components/ui/backarrow';
+import ShipmentMap from '@/components/ShipmentMap';
 
 import { ParcelPage } from '../parcels/index'; 
 import { CustomersPage } from '../customers/index';
@@ -32,6 +33,8 @@ interface Shipment {
   percentage_fill?: number;
   status_updates?: StatusUpdate[];
   status: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 const ShipmentDetails = () => {
@@ -213,8 +216,19 @@ const ShipmentDetails = () => {
         
         <TabsContent value="gps" className="mt-4">
           <Card>
-            <CardContent className="p-4">
-              <p className="text-center text-muted-foreground py-8">Live GPS tracking would be rendered here</p>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground">GPS Tracking</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ShipmentMap
+                latitude={shipment.latitude}
+                longitude={shipment.longitude}
+                shipmentNo={shipment.shipment_no}
+                origin={shipment.origin}
+                destination={shipment.destination}
+                status={shipment.status}
+                vessel={shipment.vessel}
+              />
             </CardContent>
           </Card>
         </TabsContent>

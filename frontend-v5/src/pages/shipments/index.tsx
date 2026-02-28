@@ -46,15 +46,10 @@ export const ShipmentPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   
-  const baseUrl = "http://127.0.0.1:8000/shipments/";
-
   const refreshShipments = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("access_token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-      const response = await api.get<ShipmentResponse>(baseUrl + `?page=${currentPage}`, { headers });
+      const response = await api.get<ShipmentResponse>(`/shipments/?page=${currentPage}`);
       const data = response.data;
 
       setShipments(data.results);

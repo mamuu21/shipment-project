@@ -6,17 +6,6 @@ import api from '@/utils/api';
 import { ParcelTable } from './table';
 import type { Parcel } from './type'
 
-// type Parcel = {
-//   parcel_no: string;
-//   shipment?: { shipment_no: string; status: 'In-transit' | 'Delivered' };
-//   customer?: { name: string };
-//   weight: number;
-//   destination: string;
-//   status: 'In-transit' | 'Delivered' | 'Pending';
-//   created_at: string;
-//   updated_at: string;
-// };
-
 
 export const ParcelTablePage = ({
   customerId,
@@ -29,8 +18,6 @@ export const ParcelTablePage = ({
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'All' | 'In-transit' | 'Delivered' | 'Pending'>('All');
-  
 
   useEffect(() => {
     const fetchParcels = async () => {
@@ -72,20 +59,18 @@ export const ParcelTablePage = ({
     <div className="bg-white p-6 rounded-lg shadow-sm">
       <div className="border rounded-lg overflow-hidden mt-4">
         <ParcelTable
-           parcels={parcels}
-          searchQuery=""               // dummy
-          onSearchChange={() => {}}     // dummy
-          onDeleteClick={() => {}}     // dummy
-          onExportCSV={() => {}}       // dummy
-          onCreateClick={() => {}}     // dummy
-          count={parcels.length}       // dummy
-          currentPage={1}              // dummy
-          totalPages={1}               // dummy
-          onPageChange={() => {}}      // dummy
-          prevPage={null}              // dummy
-          nextPage={null}              // dummy
-          filter={filter}
-          setFilter={setFilter}
+          parcels={parcels}
+          searchQuery=""
+          onSearchChange={() => {}}
+          onDeleteClick={() => {}}
+          onExportCSV={() => {}}
+          onCreateClick={() => {}}
+          count={parcels.length}
+          currentPage={1}
+          totalPages={1}
+          onPageChange={() => {}}
+          prevPage={null}
+          nextPage={null}
           onView={(p) => console.log('view', p)}
           onEdit={(p) => console.log('edit', p)}
           onDelete={(p) => console.log('delete', p)}

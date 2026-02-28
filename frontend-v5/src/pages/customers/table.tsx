@@ -151,7 +151,7 @@ export const CustomerTable = ({
           </TableHeader>
           <TableBody>
             {filteredData.length > 0 ? filteredData.map(customer => (
-              <TableRow key={customer.id}>
+              <TableRow key={customer.id} onClick={() => onViewDetails(customer.id)} className="cursor-pointer hover:bg-muted/50">
                 <TableCell>{customer.id}</TableCell>
                 <TableCell>{customer.name}</TableCell>
                 <TableCell>{customer.email}</TableCell>
@@ -166,7 +166,7 @@ export const CustomerTable = ({
                     ? customer.shipment_nos.join(', ')
                     : 'None'}
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

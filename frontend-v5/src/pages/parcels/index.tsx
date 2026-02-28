@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/utils/api';
 import BackArrow from '@/components/ui/backarrow';
 import { ParcelTable } from './table';
 import { ParcelForm } from './form';
 import { DeleteDialog } from './delete';
+import { ParcelDetailDrawer } from './drawer';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, FileUp, } from 'lucide-react';
+import { Plus, Search, FileUp, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import type { Parcel } from './type'
 
@@ -52,11 +54,39 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [filter, setFilter] = useState<'All' | 'In-transit' | 'Delivered' | 'Pending'>('All');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [drawerParcelNo, setDrawerParcelNo] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Fetch parcels with pagination & filters
+  const [commodityFilter, setCommodityFilter] = useState('all');
+  const [customerFilter, setCustomerFilter] = useState('all');
+
+  const commodityTypes = useMemo(() => {
+    const types = new Set<string>();
+    parcels.forEach(p => {
+      if (p.commodity_type) types.add(p.commodity_type);
+    });
+    return Array.from(types).sort();
+  }, [parcels]);
+
+  const customerNames = useMemo(() => {
+    const seen = new Map<string, string>();
+    parcels.forEach(p => {
+      if (p.customer?.id && p.customer?.name) {
+        seen.set(p.customer.id, p.customer.name);
+      }
+    });
+    return Array.from(seen.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [parcels]);
+
+  const hasActiveFilters = commodityFilter !== 'all' || customerFilter !== 'all';
+
+  const clearFilters = () => {
+    setCommodityFilter('all');
+    setCustomerFilter('all');
+  };
+
   useEffect(() => {
     const fetchParcels = async () => {
       setIsLoading(true);
@@ -90,7 +120,6 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
     fetchParcels();
   }, [customerId, shipmentId, currentPage]);
 
-  // Fetch shipments for dropdown
   useEffect(() => {
     const fetchShipments = async () => {
       try {
@@ -105,7 +134,6 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
     fetchShipments();
   }, []);
 
-  // Fetch customers for dropdown
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
@@ -168,11 +196,9 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         }
       });
 
-      // Update local state
       setParcels(prev => prev.filter(p => p.parcel_no !== selectedParcel.parcel_no));
       setCount(prev => prev - 1);
       
-      // Show success notification
       toast({
         title: 'Success',
         description: 'Parcel deleted successfully',
@@ -227,10 +253,8 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
   };
 
   const filteredData = parcels.filter(p => {
-    const parcelStatus = p.shipment?.status || 'Pending'; 
-
-    const matchesTab = filter === 'All' || parcelStatus === filter;
-
+    const matchesCommodity = commodityFilter === 'all' || p.commodity_type === commodityFilter;
+    const matchesCustomer = customerFilter === 'all' || p.customer?.id === customerFilter;
 
     const matchesSearch = !searchQuery || [
       p.parcel_no,
@@ -239,10 +263,8 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
       p.commodity_type
     ].some(field => (field || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesTab && matchesSearch;
+    return matchesCommodity && matchesCustomer && matchesSearch;
   });
-
-
 
   const totalPages = Math.ceil(count / ITEMS_PER_PAGE) || 1;
 
@@ -292,7 +314,60 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         </div>
       </div>
 
+      {/* Filter dropdowns */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <Select value={commodityFilter} onValueChange={setCommodityFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Commodity Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Commodities</SelectItem>
+            {commodityTypes.map(type => (
+              <SelectItem key={type} value={type}>{type}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
+        <Select value={customerFilter} onValueChange={setCustomerFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Customer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Customers</SelectItem>
+            {customerNames.map(([id, name]) => (
+              <SelectItem key={id} value={id}>{name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+            <X className="mr-1 h-4 w-4" /> Clear
+          </Button>
+        )}
+      </div>
+
+      {/* Active filter badges */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {commodityFilter !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              Commodity: {commodityFilter}
+              <button onClick={() => setCommodityFilter('all')} className="ml-0.5 hover:text-blue-900" aria-label="Clear commodity filter">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {customerFilter !== 'all' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              Customer: {customerNames.find(([id]) => id === customerFilter)?.[1] ?? customerFilter}
+              <button onClick={() => setCustomerFilter('all')} className="ml-0.5 hover:text-blue-900" aria-label="Clear customer filter">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
 
       <ParcelTable
         parcels={filteredData}
@@ -307,8 +382,10 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         onPageChange={setCurrentPage}
         prevPage={prevPage}
         nextPage={nextPage}
-        filter={filter}
-        setFilter={setFilter}
+        onViewParcel={(parcelNo) => {
+          setDrawerParcelNo(parcelNo);
+          setDrawerOpen(true);
+        }}
       />
 
       <ParcelForm
@@ -327,8 +404,17 @@ export const ParcelPage = ({ customerId, shipmentId }: ParcelPageProps) => {
         itemName={selectedParcel?.parcel_no || ''}
         isDeleting={isDeleting}
       />
+
+      <ParcelDetailDrawer
+        parcelNo={drawerParcelNo}
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false);
+          setDrawerParcelNo(null);
+        }}
+      />
     </div>
-);
+  );
 };
 
 export default ParcelPage;
