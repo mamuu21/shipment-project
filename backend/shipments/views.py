@@ -1,12 +1,9 @@
-from django.shortcuts import render
-from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 from django.http import FileResponse
 
 from rest_framework import generics, status
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -15,12 +12,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Shipment, Customer, Parcel, Document, Invoice, Step, Parameter
 from .serializers import (
     ShipmentSerializer, CustomerSerializer, ParcelSerializer,
-    DocumentSerializer, InvoiceSerializer, RegisterSerializer,
-    CustomTokenObtainPairSerializer, UserSerializer,
+    DocumentSerializer, InvoiceSerializer,
     StepSerializer, ParameterSerializer,
 )
-from .permissions import RoleBasedAccessPermission, IsSelfOrAdmin
 from .filters import InvoiceFilter
+from accounts.permissions import RoleBasedAccessPermission, IsSelfOrAdmin
+from accounts.utils import get_user_role
 
 import io
 import logging
@@ -29,26 +26,17 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 
 
-User = get_user_model()
-
-
 logger = logging.getLogger(__name__)
 
 
 class StaffDeleteProtectedMixin:
-    """
-    Mixin that prevents staff from deleting objects.
-    Admins can still delete.
-    """
+    """Prevents staff from deleting objects. Admins can still delete."""
     def destroy(self, request, *args, **kwargs):
-        if request.user.role == 'staff':
+        if get_user_role(request.user) == 'staff':
             return Response({"detail": "Staff cannot delete objects."}, status=403)
         return super().destroy(request, *args, **kwargs)
 
 
-# ==============================
-#  Base Role-Based Mixin
-# ==============================
 class RoleBasedQuerysetMixin:
     model = None
     customer_field = 'customer__email'
@@ -56,13 +44,12 @@ class RoleBasedQuerysetMixin:
     def get_queryset(self):
         user = self.request.user
         qs = self.model.objects.all()
+        role = get_user_role(user)
 
-        # Admin & staff see all
-        if user.role in ['admin', 'staff']:
+        if role in ['admin', 'staff']:
             return qs
 
-        # Customers see only their own data
-        if user.role == 'customer':
+        if role == 'customer':
             filter_kwargs = {self.customer_field: user}
             return qs.filter(**filter_kwargs)
 
@@ -80,48 +67,6 @@ class RoleBasedQuerysetMixin:
         logger.info(f"{self.request.user.email} deleted {self.model.__name__} ID={instance.pk}")
         super().perform_destroy(instance)
 
-
-
-# ==============================
-#  Register Views
-# ==============================
-class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        
-        refresh = CustomTokenObtainPairSerializer.get_token(user)
-        data = {
-            "user": serializer.data,
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-
-# ==============================
-# User Profile View
-# ==============================
-class UserProfileView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-
-
-# ==============================
 
 class BaseUserView:
     authentication_classes = [JWTAuthentication]

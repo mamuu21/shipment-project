@@ -1,8 +1,13 @@
 def get_user_role(user):
-    if hasattr(user, "role"):
-        return user.role
+    """Derive a role string from Django Group membership.
+
+    Priority: superuser → 'admin' group → 'staff' group → 'customer'.
+    """
     if user.is_superuser:
         return "admin"
-    if user.is_staff:
+    group_names = set(user.groups.values_list("name", flat=True))
+    if "admin" in group_names:
+        return "admin"
+    if "staff" in group_names:
         return "staff"
     return "customer"

@@ -1,77 +1,9 @@
 from rest_framework import serializers
 from decimal import Decimal
 from django.db.models import Sum
-from .models import Shipment, Customer, Parcel, Document, Invoice, User, InvoiceItem, Step, Parameter
-from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import Shipment, Customer, Parcel, Document, Invoice, InvoiceItem, Step, Parameter
 
-User = get_user_model()
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        validators=[validate_password],
-        style={'input_type': 'password'}
-    )
-    password2 = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={'input_type': 'password'}
-    )
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'password', 'password2', 'role')
-        extra_kwargs = {
-            'email': {'required': True}
-        }
-
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        return attrs
-
-    def create(self, validated_data):
-        validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
-        return user
-    
-    
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['username'] = user.username
-        token['email'] = user.email
-        token['role'] = user.role
-        return token
-    
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        data['user'] = {
-            'id': self.user.id,
-            'email': self.user.email,
-            'role': self.user.role
-        }
-        return data
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'role']
-        read_only_fields = ['id']
-        
-        def get_customer(self, obj):
-            if obj.role != "customer":
-                return None
-            try:
-                return CustomerSerializer(obj.customer).data
-            except Customer.DoesNotExist:
-                return None
-        
 
 class CustomerSerializer(serializers.ModelSerializer):
     total_invoices_paid = serializers.SerializerMethodField()
@@ -109,7 +41,6 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         return [s.shipment_no for s in shipments]
     
-               
 
 class ShipmentSerializer(serializers.ModelSerializer):
     customer_count = serializers.SerializerMethodField()
@@ -129,7 +60,6 @@ class ShipmentSerializer(serializers.ModelSerializer):
         return obj.parcels.count()
 
         
-        
 class ParcelSerializer(serializers.ModelSerializer):
     customer = CustomerSerializer(read_only=True)
     customer_id = serializers.PrimaryKeyRelatedField(
@@ -138,9 +68,6 @@ class ParcelSerializer(serializers.ModelSerializer):
     shipment_vessel = serializers.CharField(source='shipment.vessel', read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     shipment_status = serializers.CharField(source='shipment.status', read_only=True)
-    
-    
-            
     
     class Meta:
         model = Parcel
@@ -151,9 +78,6 @@ class ParcelSerializer(serializers.ModelSerializer):
         ]
       
         def to_representation(self, instance):
-            """
-            Ensure the parcel's status matches the shipment's status in API responses.
-            """
             representation = super().to_representation(instance)
             representation['status'] = instance.shipment.status
             return representation
@@ -163,7 +87,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = '__all__'
-
 
 
 class InvoiceItemSerializer(serializers.ModelSerializer):

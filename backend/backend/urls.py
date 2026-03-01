@@ -8,6 +8,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     # API / backend routes FIRST
+    path("api/", include("accounts.urls")),
     path("api/", include("shipments.urls")),
     path("api/settings/", SystemSettingsView.as_view(), name="system-settings"),
 
